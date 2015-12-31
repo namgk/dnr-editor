@@ -110,6 +110,25 @@
     </form>
 </div>
 
+<div id="node-dialog-new-constraints" class="hide">
+    <div class="form-row">
+        <label for="constraint-id" ><i class="fa fa-cloud"></i>Constraint Id:</label>
+        <input type="text" id="constraint-id">
+        <label for="device-id" ><i class="fa"></i>Device:</label>
+        <input type="text" id="device-id" placeholder="device's application scope unique ID">
+        <label for="device-id" ><i class="fa"></i>Geolocation:</label>
+        <input type="text" id="geoloc-constraint" placeholder="lat,long,radius">
+        <label for="device-id" ><i class="fa"></i>Network:</label>
+        <input type="text" id="network-constraint" placeholder="CIDR">
+        <label for="device-id" ><i class="fa"></i>Compute:</label>
+        <input type="text" id="compute-constraint" placeholder="Compute|IO|Edge">
+        <label for="device-id" ><i class="fa"></i>Storage:</label>
+        <input type="text" id="storage-constraint" placeholder="required storage in KB">
+        <label for="device-id" ><i class="fa"></i>Custom:</label>
+        <input type="text" id="custom-constraint" placeholder="custom-defined constraint">
+    </div>
+</div>
+
 <div id="node-dialog-library-save-confirm" class="hide">
     <form class="form-horizontal">
         <div style="text-align: center; padding-top: 30px;" id="node-dialog-library-save-content">

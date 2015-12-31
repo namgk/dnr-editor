@@ -72,6 +72,8 @@
     },
     "deploy": {
         "deploy": "Deploy",
+        "constraints": "Constraints",
+        "createConstraints": "New Constraint",
         "full": "Full",
         "fullDesc": "Deploys everything in the workspace",
         "modifiedFlows": "Modified Flows",
