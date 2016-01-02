@@ -48,6 +48,7 @@ RED.view = (function() {
         moving_set = [],
         lasso = null,
         showStatus = false,
+        showConstraints = false,
         lastClickNode = null,
         dblClickPrimed = null,
         clickTime = 0,
@@ -1580,7 +1581,7 @@ RED.view = (function() {
                             }
                         }
 
-                        RED.dnr.showConstraints(d, thisNode);
+                        RED.dnr.redrawConstraints(d, thisNode, showConstraints);
 
                         d.dirty = false;
                     }
@@ -1818,6 +1819,16 @@ RED.view = (function() {
                 return showStatus;
             } else {
                 showStatus = s;
+                RED.nodes.eachNode(function(n) { n.dirty = true;});
+                //TODO: subscribe/unsubscribe here
+                redraw();
+            }
+        },
+        constraints: function(s) {
+            if (s == null) {
+                return showConstraints;
+            } else {
+                showConstraints = s;
                 RED.nodes.eachNode(function(n) { n.dirty = true;});
                 //TODO: subscribe/unsubscribe here
                 redraw();

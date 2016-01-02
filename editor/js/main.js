@@ -203,10 +203,11 @@ var RED = (function() {
         RED.editor.init();
 
         RED.deploy.init(RED.settings.theme("deployButton",null));
-        RED.deployspec.init(RED.settings.theme("deployButton",null));
 
         RED.keyboard.add(/* ? */ 191,{shift:true},function(){RED.keyboard.showHelp();d3.event.preventDefault();});
         RED.comms.connect();
+
+        RED.dnr.init();
 
         $("#main-container").show();
         $(".header-toolbar").show();

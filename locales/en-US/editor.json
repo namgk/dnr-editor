@@ -22,6 +22,7 @@
                 "show": "Toggle Sidebar"
             },
             "displayStatus": "Display Node Status",
+            "displayConstraints": "Display Node Constraints",
             "displayConfig": "Configuration Nodes",
             "import": "Import",
             "export": "Export",

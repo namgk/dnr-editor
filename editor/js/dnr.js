@@ -16,93 +16,308 @@
 
  RED.dnr = (function() {
      var constraints = [];
-     var activeConstraint;
-     var showConstraint = true;
-     var constraints_colours = {
-        "red":    "#c00",
-        "green":  "#5a8",
-        "yellow": "#F9DF31",
-        "blue":   "#53A3F3",
-        "grey":   "#d3d3d3"
+
+    function init() {
+      $('<li><span class="deploy-button-group button-group">'+
+        '<a id="btn-constraints" class="deploy-button disabled" href="#"> <span>'+RED._("deploy.createConstraints")+'</span></a>'+
+        '<a id="btn-constraints-options" data-toggle="dropdown" class="deploy-button" href="#"><i class="fa fa-caret-down"></i></a>'+
+        '</span></li>').prependTo(".header-toolbar");
+
+      $('#btn-constraints').click(testConstraints);
+
+      $("#node-dialog-new-constraints").dialog({
+        title:"Define new constraint",
+        autoOpen: false,
+        width: 500,
+        open: function(e) {
+            RED.keyboard.disable();
+        },
+        close: function(e) {
+            RED.keyboard.enable();
+        },
+        buttons: 
+        {
+            "Create": newConstraintDialog,
+            Cancel: function() {
+                $( this ).dialog( "close" );
+            }
+        }
+      });
+
+
+      RED.menu.init({id:"btn-constraints-options",
+        options: []
+      });
+
+      var constraintMenu = {
+          id:"menu-item-constraints",
+          toggle:true,
+          label:RED._("menu.label.displayConstraints"),
+          onselect:function(s) { toggleConstraints(s)}
+        };
+
+      RED.menu.addItem("btn-sidemenu", constraintMenu);
     }
 
-     function addConstraint(c) {
-         constraints.push(c);
-     }
-     function removeConstraint(c) {
-        for (var i = 0; i < constraints.length; i++){
-            if ((c.id && c.id === constraints[i].id) || c === constraints[i].id)
-                constraints.splice(i, 1);
-        }
-     }
-     function getConstraint(c){
-        for (var i = 0; i < constraints.length; i++){
-            if ((c.id && c.id === constraints[i].id) || c === constraints[i].id)
-                return constraints[i];
-        }  
-        return null;
-     }
-     function allConstraint(){
-        return JSON.parse(JSON.stringify(constraints));
-     }
-     function activeConstraint(){
-        return activeConstraint;
-     }
-     function setActiveConstraint(c){
-        activeConstraint = getConstraint(c);
-     }
-     function appendConstraints(node){
-        var constraint = node.append("svg:g").attr("class","node_constraint_group").style("display","none");
+    function loadConstraints(){
+      $.ajax({
+          headers: {
+              "Accept":"text/json"
+          },
+          cache: false,
+          url: 'constraints',
+          success: function(data) {
+              constraints = data;
+          }
+      });
+    }
 
-        var constraintRect = constraint.append("rect").attr("class","node_constraint")
-                            .attr("x",6).attr("y",1).attr("width",9).attr("height",9)
-                            .attr("rx",2).attr("ry",2).attr("stroke-width","3");
+    function toggleConstraints(checked) {
+      // showConstraints(state);
+      console.log(checked);
+      // showConstraints = checked;
+      RED.view.constraints(checked);
+      // if (checked){
+      //     var activeWorkspace = RED.workspaces.active();
+      //     activeNodes = RED.nodes.filterNodes({z:activeWorkspace});
+      //     activeNodes.forEach(function(node){
+            
+      //     });
+      // } else {
 
-        var constraintLabel = constraint.append("svg:text")
-            .attr("class","node_constraint_label")
-            .attr('x',20).attr('y',9);
+      // }
+    }
 
-     }
-     function showConstraints(d, thisNode){
-        if (!showConstraint || !d.constraint) {
-            thisNode.selectAll('.node_constraint_group').style("display","none");
-        } else {
-            thisNode.selectAll('.node_constraint_group').style("display","inline").attr("transform","translate(3,"+(d.h+3)+")");
-            var fill = constraints_colours[d.constraint.fill]; // Only allow our colours for now
-            if (d.constraint.shape == null && fill == null) {
-                thisNode.selectAll('.node_constraint').style("display","none");
-            } else {
-                var style;
-                if (d.constraint.shape == null || d.constraint.shape == "dot") {
-                    style = {
-                        display: "inline",
-                        fill: fill,
-                        stroke: fill
-                    };
-                } else if (d.constraint.shape == "ring" ){
-                    style = {
-                        display: "inline",
-                        fill: '#fff',
-                        stroke: fill
-                    }
-                }
-                thisNode.selectAll('.node_constraint').style(style);
-            }
-            if (d.constraint.text) {
-                thisNode.selectAll('.node_constraint_label').text(d.constraint.text);
-            } else {
-                thisNode.selectAll('.node_constraint_label').text("");
-            }
-        }
-     }
-     return {
-         addConstraint: addConstraint,
-         removeConstraint: removeConstraint,
-         getConstraint: getConstraint,
-         allConstraint: allConstraint,
-         getActiveConstraint: activeConstraint,
-         setActiveConstraint: setActiveConstraint,
-         appendConstraints: appendConstraints,
-         showConstraints: showConstraints
-     }
+    function newConstraintDialog(){
+      var constraintId = $( "#constraint-id" ).val();
+      if (!constraintId){
+          alert('constrantId is required');
+          return;
+      }
+          
+      var deviceId = $( "#device-id" ).val();
+      var geoloc = $( "#geoloc-constraint" ).val();
+      var network = $( "#network-constraint" ).val();
+      var compute = $( "#compute-constraint" ).val();
+      var storage = $( "#storage-constraint" ).val();
+      var custom = $( "#custom-constraint" ).val();
+      
+      var creatingConstraint = {
+        id:constraintId
+      };  
+      if (deviceId)
+          creatingConstraint['deviceId'] = deviceId;
+      if (geoloc)
+          creatingConstraint['geoloc'] = geoloc;
+      if (network)
+          creatingConstraint['network'] = network;
+      if (compute)
+          creatingConstraint['compute'] = compute;
+      if (storage)
+          creatingConstraint['storage'] = storage;
+      if (custom)
+          creatingConstraint['custom'] = custom;
+
+      // add it to the top down box
+      addConstraint(creatingConstraint);
+
+      $( this ).dialog( "close" );
+    }
+
+    function testConstraints(){
+      var c = {
+        id: 'Location in Vancouver',
+        loc: '143.23232, -93.232233'
+      };
+      var c2 = {
+        id: 'Location in Burnaby',
+        loc: '143.267732, -93.996868'
+      };
+
+      addConstraint(c);
+      addConstraint(c2);
+
+      applyingConstraint(getConstraint(c));
+      applyingConstraint(getConstraint(c2));
+    }
+
+    function addConstraint(c){
+      if (getConstraint(c)){
+        // alert("Constraint name duplicated");
+        return;
+      }
+
+      var newConstraintOption = {
+        id:c.id,
+        // toggle:"deploy-type",
+        // icon:"red/images/deploy-full.png",
+        label:c.id,
+        // sublabel:RED._("deploy.fullDesc"),
+        // selected: true, 
+        onselect:function(s) { applyingConstraint(c)}
+      };
+
+      RED.menu.addItem("btn-constraints-options", newConstraintOption);
+
+      // add it to the constraints list
+      c.fill = getRandomColor();
+      c.text = c.id;
+      constraints.push(c);
+    }
+
+    /** 
+     * Applying a constraint to selected nodes
+     * Constraints and Nodes are Many to Many relationship
+     * @param {constraint} c - The constraint being applyed to 
+     */
+    function applyingConstraint(c){
+      if (!getConstraint(c))
+        return;
+
+      var appliedTo = 0;
+
+      // TODO: either bind constraint to nodes
+      RED.nodes.eachNode(function(node){
+        if (!node.selected)
+          return;
+
+        if (!node['constraints'])
+          node['constraints'] = {};
+
+        if (node.constraints[c.id])
+          return;
+
+        node.constraints[c.id] = c;
+        appliedTo++;
+      });
+
+      // or nodes to constraint, choose one!
+      // RED.nodes.eachNode(function(node){
+      //   if (!node.selected)
+      //     return;
+
+      //   if (!c['nodes'])
+      //     c['nodes'] = [];
+
+      //   for (var i = 0; i < c.nodes.length; i++){
+      //     if (c.nodes[i] === node.id)
+      //       return;
+      //   }
+
+      //   c.nodes.push(node.id);
+      // });
+
+      if (appliedTo)
+        RED.notify(c.id + " applied to "  + appliedTo + " selected nodes", "info");
+    }
+
+    function getRandomColor(){
+      var possibleColor = ["#e4d9d7", "#a784ec", "#ffbbbf", "#b6e4e1", 
+            "#c46170", "#adff5f", "#ad98d6", "#b6c5e0", "#f7dbe4"];
+
+      var result = possibleColor[Math.ceil(Math.random() * possibleColor.length) - 1];
+
+      return result;
+    }
+
+    function removeConstraint(c) {
+      for (var i = 0; i < constraints.length; i++){
+          if ((c.id && c.id === constraints[i].id) || c === constraints[i].id)
+              constraints.splice(i, 1);
+      }
+    }
+    function getConstraint(c){
+      for (var i = 0; i < constraints.length; i++){
+          if ((c.id && c.id === constraints[i].id) || c === constraints[i].id)
+              return constraints[i];
+      }  
+      return null;
+    }
+    function allConstraint(){
+      return JSON.parse(JSON.stringify(constraints));
+    }
+    function append_constraints(node){
+      var constraints = node.append("svg:g").attr("class","node_constraints_group").style("display","none");
+    }
+
+    function redraw_constraints(d, thisNode, showConstraints){
+      var node_constraints_group = thisNode.selectAll('.node_constraints_group');
+      var node_constraints_list = thisNode.selectAll('.node_constraint');
+
+      if (!showConstraints || !d.constraints) {
+        node_constraints_group.style("display","none");
+        return;
+      }
+      node_constraints_group.style("display","inline");
+
+      var nodeConstraints = [];
+
+      // TODO: what if not using d.constraints?
+      // loop throuth constraints list, in each constraint, find the list of nodes
+      // check if there is any matched node with thisNode (d.id) in such constraint
+      // add such constraint to the array
+
+      // for (var i = 0; i < constraints.length; i++){
+      //   var cNodes = constraints[i].nodes;
+      //   if (!cNodes)
+      //     continue;
+
+      //   for (var j = 0; j < cNodes.length; j++){
+      //     if (cNodes[j].id === d.id)
+      //       nodeConstraints.push(constraints[i]);
+      //   }
+      // }
+
+      // TODO: choose this or the above algor, or use both two data structure,
+      // NOTE: d.constraints might not be available when constraints list is loaded from the server!
+      // --> the above is safer, but much slower
+      for (c in d.constraints){
+        if (!d.constraints.hasOwnProperty(c))
+          continue;
+
+        nodeConstraints.push(d.constraints[c]);
+      }
+
+      // TODO: weak check on array matching, should check with constraint id (data) and text label (view)
+      if (node_constraints_list[0].length === nodeConstraints.length)
+        return;
+
+      // create new nodes with a fresh start (avoid mix and match)
+      node_constraints_list.remove();
+
+      node_constraints_group
+        .attr("transform","translate(3, -" + nodeConstraints.length * 12 + ")")
+        .style({"font-style": "italic", "font-size": 12});
+
+      for (var j = 0; j < nodeConstraints.length; j++){
+
+        var constraintData = nodeConstraints[j];
+        var fill = constraintData.fill || "black";
+        var shape = constraintData.shape;
+
+        var node_constraint = node_constraints_group.append("svg:g")
+          .style({fill: fill, stroke: fill})
+          .attr("class","node_constraint")
+          .attr("transform","translate(0, " + j*17 + ")");
+
+        // node_constraint.append("rect")
+        //   .attr("class","node_constraint_icon")
+        //   .attr("x",0).attr("y",0)
+        //   .attr("width",9).attr("height",9);
+
+        node_constraint.append("svg:text")
+          .attr("class","node_constraint_label")
+          .text(constraintData.text ? constraintData.text : "");
+      } 
+    }
+
+    return {
+       addConstraint: addConstraint,
+       removeConstraint: removeConstraint,
+       getConstraint: getConstraint,
+       allConstraint: allConstraint,
+       appendConstraints: append_constraints,
+       redrawConstraints: redraw_constraints,
+       init: init
+    }
  })();
