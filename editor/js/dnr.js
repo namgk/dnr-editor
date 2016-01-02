@@ -73,19 +73,8 @@
     }
 
     function toggleConstraints(checked) {
-      // showConstraints(state);
       console.log(checked);
-      // showConstraints = checked;
       RED.view.constraints(checked);
-      // if (checked){
-      //     var activeWorkspace = RED.workspaces.active();
-      //     activeNodes = RED.nodes.filterNodes({z:activeWorkspace});
-      //     activeNodes.forEach(function(node){
-            
-      //     });
-      // } else {
-
-      // }
     }
 
     function newConstraintDialog(){
@@ -160,8 +149,8 @@
       RED.menu.addItem("btn-constraints-options", newConstraintOption);
 
       // add it to the constraints list
-      c.fill = getRandomColor();
-      c.text = c.id;
+      c.fill = c.fill ? c.fill : getRandomColor();
+      c.text = c.text ? c.text : c.id;
       constraints.push(c);
     }
 
@@ -209,6 +198,8 @@
 
       if (appliedTo)
         RED.notify(c.id + " applied to "  + appliedTo + " selected nodes", "info");
+
+      RED.nodes.dirty(true);
     }
 
     function getRandomColor(){
@@ -248,6 +239,7 @@
         node_constraints_group.style("display","none");
         return;
       }
+
       node_constraints_group.style("display","inline");
 
       var nodeConstraints = [];
@@ -293,12 +285,21 @@
 
         var constraintData = nodeConstraints[j];
         var fill = constraintData.fill || "black";
-        var shape = constraintData.shape;
+        // var shape = constraintData.shape;
 
-        var node_constraint = node_constraints_group.append("svg:g")
-          .style({fill: fill, stroke: fill})
+        var node_constraint = node_constraints_group.append("svg:g");
+        var makeCallback = function(id, node_constraint){
+          return function(){
+            console.log(id);
+            delete d.constraints[id];
+            node_constraint.remove();
+            RED.nodes.dirty(true);
+          }
+        };
+        node_constraint.style({fill: fill, stroke: fill})
           .attr("class","node_constraint")
-          .attr("transform","translate(0, " + j*17 + ")");
+          .attr("transform","translate(0, " + j*17 + ")")
+          .on("click", makeCallback(constraintData.id, node_constraint));
 
         // node_constraint.append("rect")
         //   .attr("class","node_constraint_icon")
@@ -311,6 +312,24 @@
       } 
     }
 
+    function prepareConstraints(n, node){
+      if (n.constraints)
+        node['constraints'] = n.constraints;
+    }
+
+    function loadConstraints(nodes){
+      for (var i = 0; i < nodes.length; i++){
+        if (!nodes[i]['constraints'])
+          continue;
+
+        var nConstraints = nodes[i].constraints;
+        for (c in nConstraints){
+          if (nConstraints.hasOwnProperty(c))
+            addConstraint(nConstraints[c]);
+        }
+      }
+    }
+
     return {
        addConstraint: addConstraint,
        removeConstraint: removeConstraint,
@@ -318,6 +337,8 @@
        allConstraint: allConstraint,
        appendConstraints: append_constraints,
        redrawConstraints: redraw_constraints,
+       prepareConstraints: prepareConstraints,
+       loadConstraints: loadConstraints,
        init: init
     }
  })();

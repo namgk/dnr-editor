@@ -445,6 +445,8 @@ RED.nodes = (function() {
                 }
             }
         }
+
+        RED.dnr.prepareConstraints(n, node);
         return node;
     }
 
@@ -775,6 +777,7 @@ RED.nodes = (function() {
                 def = registry.getNodeType(n.type);
                 if (!def || def.category != "config") {
                     var node = {x:n.x,y:n.y,z:n.z,type:0,wires:n.wires,changed:false};
+                    RED.dnr.prepareConstraints(n, node);
                     if (createNewIds) {
                         if (subflow_map[node.z]) {
                             node.z = subflow_map[node.z].id;
@@ -902,6 +905,7 @@ RED.nodes = (function() {
         }
 
         RED.workspaces.refresh();
+        RED.dnr.loadConstraints(new_nodes);
         return [new_nodes,new_links,new_workspaces,new_subflows];
     }
 
