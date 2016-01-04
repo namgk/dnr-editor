@@ -226,6 +226,7 @@ function start(type,diff) {
         log.info(log._("nodes.flows.starting-flows"));
     }
     var id;
+    console.log('DEBUG: activeFlowConfig \n' + JSON.stringify(activeFlowConfig));
     if (!diff) {
         activeFlows['_GLOBAL_'] = Flow.create(activeFlowConfig);
         for (id in activeFlowConfig.flows) {
@@ -257,10 +258,11 @@ function start(type,diff) {
                     subflowInstanceNodeMap[activeNodes[nid]._alias].push(nid);
                 }
             });
-
         }
     }
+
     events.emit("nodes-started");
+    console.log('DEBUG: diff \n' + JSON.stringify(diff));
     if (diff) {
         log.info(log._("nodes.flows.started-modified-"+type));
     } else {

@@ -57,6 +57,8 @@ function Flow(global,flow) {
                 node = flow.nodes[id];
                 if (!node.subflow) {
                     if (!activeNodes[id]) {
+                        // TODO: if type is placeholder, the node won't be created
+                        // the result from createNode will be null
                         activeNodes[id] = createNode(node.type,node);
                     }
                 } else {
@@ -259,6 +261,20 @@ function mapEnvVarProperties(obj,prop) {
 
 function createNode(type,config) {
     // console.log("CREATE",type,config.id);
+    if (config.constraints){
+        var hasConstraint = false;
+        for (c in config.constraints){
+            if (config.constraints.hasOwnProperty(c)){
+                hasConstraint = true;
+            }
+        }
+        if (hasConstraint){
+            var dnrResult = require('../dnr').process(config);
+            if (dnrResult !== config)
+                return dnrResult;
+        }
+    }
+    
     var nn = null;
     var nt = typeRegistry.get(type);
     if (nt) {

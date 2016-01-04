@@ -290,7 +290,6 @@
         var node_constraint = node_constraints_group.append("svg:g");
         var makeCallback = function(id, node_constraint){
           return function(){
-            console.log(id);
             delete d.constraints[id];
             node_constraint.remove();
             RED.nodes.dirty(true);

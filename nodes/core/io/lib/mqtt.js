@@ -194,7 +194,7 @@ MQTTClient.prototype.subscribe = function(topic,qos) {
       this.pendingSubscriptions[options.messageId] = topic;
       this.lastOutbound = (new Date()).getTime();
       self.client.subscribe(options);
-      self.client.setPacketEncoding('binary');
+      self.client.setEncoding('binary');
    }
 }
 MQTTClient.prototype.unsubscribe = function(topic) {
