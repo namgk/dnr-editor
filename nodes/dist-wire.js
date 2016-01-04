@@ -89,6 +89,12 @@ module.exports = function(RED) {
             console.log('DEBUG: DNRNode send message to broker: \n' + JSON.stringify(dnrMsg));
             me.client.publish(dnrMsg);
         })
+
+        me.on('close', function() {
+            if (me.client) {
+                me.client.disconnect();
+            }
+        });
     }
 
     RED.nodes.registerType("dnr",DNRNode);
