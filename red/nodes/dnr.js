@@ -1,5 +1,6 @@
 var typeRegistry = require("./registry");
 var clone = require("clone");
+var settings = require('../../settings.js');
 
 function process(nodeConfig){
 	var constraints = nodeConfig.constraints;
@@ -35,6 +36,11 @@ function process(nodeConfig){
 }
 
 function satisfyConstraints(constraints){
+	// TODO: implement this logic!
+	if (constraints.deviceId){
+		if (constraints.deviceId === settings.deviceId)
+			return true;
+	}
 	return false;
 }
 

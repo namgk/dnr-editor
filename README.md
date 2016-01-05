@@ -1,61 +1,146 @@
-# Node-RED
+# Distributed Node-RED (DNR)
 
-http://nodered.org
+Node-RED is a visual tool for wiring the Internet of Things.  The Distributed Node-RED (DNR) project extends Node-RED to support flows that can be distributed between devices.  This code is work in progress.
 
-[![Build Status](https://travis-ci.org/node-red/node-red.svg)](https://travis-ci.org/node-red/node-red)
-[![Coverage Status](https://coveralls.io/repos/node-red/node-red/badge.svg?branch=master)](https://coveralls.io/r/node-red/node-red?branch=master)
+The idea of DNR:
 
-A visual tool for wiring the Internet of Things.
+* every device has a capability/property definition such as storage, memory or geographic location.
+* a Node-RED node can be configured so that it only run on certain devices by defining one or more constraints assocciate to it. The constraints will be matched against the device's capability/property definition.
+* if a node is not to be run on a device due to the device not meeting the required constraints, such node will be replaced to a special node called DNRNode. DNRNode forwards the messages back and forth between the device where this node run and the current device.
+* mechanism for all participating devices to download the distributed flow from a 'master' device such as a cloud server.
 
-![Node-RED: A visual tool for wiring the Internet of Things](http://nodered.org/images/node-red-screenshot.png)
+For more information on our initial ideas, see these [presentation](http://www.slideshare.net/MichaelBlackstock/wo-t-2014-blackstock-2), [presentation](http://www.slideshare.net/namnhong/developing-io-t-applications-in-the-fog-a-distributed-dataflow-approach) and assocated [paper](http://www.webofthings.org/wp-content/uploads/2009/07/wot20140_submission_1.pdf) presented at the [Web of Things 2014 workshop](http://www.webofthings.org/events/wot/). Watch this space for more information on how to configure and run the system.
+
+In the meantime, feel free to contact [@mblackstock](http://twitter.com/mblackstock) or <kyng@ece.ubc.ca> for more info.
 
 ## Quick Start
 
-Check out http://nodered.org/docs/getting-started/ for full instructions on getting
-started.
+Installing on an individual device (laptop, server, raspberry-pis) is the same as standard Node-RED.
 
-1. `sudo npm install -g node-red`
-2. `node-red`
-3. Open <http://localhost:1880>
+Check out <http://nodered.org> for full instructions on getting started with Node-RED.
 
-## Getting Help
+1. git clone
+2. cd node-red
+3. npm install
+4. grunt build
+5. node red
+6. Open <http://localhost:1880>
 
-More documentation can be found [here](http://nodered.org/docs).
+# Testing with two processes in one device (e.g laptop)
+Clone the code into two different directories, such as node-red-1880 and node-red-1881. 
 
-For further help, or general discussion, please use the
-[mailing list](https://groups.google.com/forum/#!forum/node-red).
+Modify settings.js in node-red-1881 to differentiate these two processes:
+```bash
+cd node-red-1881
+```
+* set the port to 1881
+* set the deviceId to 1881
+* set the userDir (uncomment) to another directory other than the default, e.g /home/nol/.node-red2
 
-## Developers
+Modify dnr.test for testing purpose: 
+```bash
+echo "1881" > dnr.test
+```
 
-If you want to run the latest code from git, here's how to get started:
+Start node-red-1880. Go to the editor and select Import > Clipboard from the menu at the top right conner. Paste the following example flow and click ok. The example flow read content from a file and output it to the Debug node. The idea is to demonstrate how the File node is run on different device that read files on that device, not the current running device.
 
-1. Install grunt, the build tool
+```json
+[{
+    "id": "f1638095.0e9c8",
+    "type": "inject",
+    "z": "ad35591f.52caa8",
+    "name": "",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "x": 143,
+    "y": 84,
+    "wires": [
+        ["2446251.fdbb9da"]
+    ],
+    "constraints": {}
+}, {
+    "id": "2446251.fdbb9da",
+    "type": "file in",
+    "z": "ad35591f.52caa8",
+    "name": "",
+    "filename": "dnr.test",
+    "format": "utf8",
+    "x": 246,
+    "y": 192,
+    "wires": [
+        ["cfae26fe.3051d8"]
+    ],
+    "constraints": {
+        "run on device 1881": {
+            "id": "run on device 1881",
+            "deviceId": "1881",
+            "fill": "#c46170",
+            "text": "run on device 1881"
+        }
+    }
+}, {
+    "id": "cfae26fe.3051d8",
+    "type": "debug",
+    "z": "ad35591f.52caa8",
+    "name": "",
+    "active": true,
+    "console": "false",
+    "complete": "false",
+    "x": 481,
+    "y": 114,
+    "wires": [],
+    "constraints": {}
+}]
+```
 
-        npm install -g grunt-cli
+Click on Deploy button to run this flow on node-red-1880. If you click on the Inject trigger, there will be no output on the Debug console because the node File isn't being run on the current device.
 
-2. Clone the code:
+After this, a new flow file will be created on the default location as stated in the settings.js. For example, /home/user/.node-red/flow_...local.json
 
-        git clone https://github.com/node-red/node-red.git
-        cd node-red
+Copy this file to /home/user/.node-red2 for the second DNR process.
 
-3. Install the node-red dependencies
+Next, start node-red-1881
+```bash
+cd ..
+cd node-red-1881
+node red
+```
 
-        npm install
+Go to <http://localhost:1881>
 
-4. Build the code
+Modify the flow in device 1881:
+* delete the "run on device 1881" constraint on the File In node by clickin on the constraint
+* create a new constraint by clicking "New Constraint", put in "run on device 1880" on the Constraint Id, 1880 on the deviceId box. Click ok.
+* select the Debug and Inject nodes and apply the newly created constraint by clicking on it in the drop down menu next to the New Constraint button. Click on a blank space in the editor to refresh the view.
+* click on Deploy button
 
-        grunt build
+Now test triggering the Inject node.
+* trigger the Inject nodes in either <http://localhost:1880> or <http://localhost:1881>, 1881 shows up on the Debug console
+* the Debug console in <http://localhost:1881> does not show anything
 
-5. Run
+This is because the File In node is run on the device 1881 and read the dnr.test file in that device instead of in device 1880. On the other hand, the Debug node is constrained to run on device 1880 so that the Debug console on <http://localhost:1881> won't be showing anything.
 
-        node red.js
+Documentation on Node-RED can be found [here](http://nodered.org/docs/).
 
-## Contributing
+## Support
 
-Before raising a pull-request, please read our
-[contributing guide](https://github.com/node-red/node-red/blob/master/CONTRIBUTING.md).
+For support or questions related to DNR, please contact [@mblackstock](http://twitter.com/mblackstock) or Nam Giang at <kyng@ece.ubc.ca>.
 
-## Authors
+For further help, or general discussion related to Node-RED, there is also a [mailing list](https://groups.google.com/forum/#!forum/node-red).
+
+## Browser Support
+
+The Node-RED editor runs in the browser. We routinely develop and test using
+Chrome and Firefox. We have anecdotal evidence that it works in IE9.
+
+We do not yet support mobile browsers, although that is high on our priority
+list.
+
+## Original Node-RED
 
 Node-RED is a creation of [IBM Emerging Technology](http://ibm.com/blogs/et).
 
@@ -64,6 +149,8 @@ Node-RED is a creation of [IBM Emerging Technology](http://ibm.com/blogs/et).
 
 For more open-source projects from IBM, head over [here](http://ibm.github.io).
 
+DNR is an extension of Node-RED by Mike Blackstock [@mblackstock](http://twitter.com/mblackstock)
+
 ## Copyright and license
 
-Copyright 2013, 2015 IBM Corp. under [the Apache 2.0 license](LICENSE).
+Copyright 2013, 2014 IBM Corp. under [the Apache 2.0 license](LICENSE).

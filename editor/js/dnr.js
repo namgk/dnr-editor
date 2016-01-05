@@ -23,7 +23,7 @@
         '<a id="btn-constraints-options" data-toggle="dropdown" class="deploy-button" href="#"><i class="fa fa-caret-down"></i></a>'+
         '</span></li>').prependTo(".header-toolbar");
 
-      $('#btn-constraints').click(testConstraints);
+      $('#btn-constraints').click(function() { $( "#node-dialog-new-constraints" ).dialog( "open" ); });
 
       $("#node-dialog-new-constraints").dialog({
         title:"Define new constraint",
@@ -57,19 +57,6 @@
         };
 
       RED.menu.addItem("btn-sidemenu", constraintMenu);
-    }
-
-    function loadConstraints(){
-      $.ajax({
-          headers: {
-              "Accept":"text/json"
-          },
-          cache: false,
-          url: 'constraints',
-          success: function(data) {
-              constraints = data;
-          }
-      });
     }
 
     function toggleConstraints(checked) {
