@@ -20,7 +20,7 @@
 
 module.exports = {
     // this device
-    deviceId: 1880,
+    deviceId: "1880",
     
     // the tcp port that the Node-RED web server is listening on
     uiPort: 1880,

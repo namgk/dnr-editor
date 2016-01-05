@@ -37,10 +37,18 @@ function process(nodeConfig){
 
 function satisfyConstraints(constraints){
 	// TODO: implement this logic!
-	if (constraints.deviceId){
-		if (constraints.deviceId === settings.deviceId)
-			return true;
-	}
+  for (c in constraints){
+    if (!constraints.hasOwnProperty(c))
+      continue;
+
+    c = constraints[c];
+
+  	if (c.deviceId){
+  		if (c.deviceId === settings.deviceId)
+  			return true;
+  	}
+    
+  }
 	return false;
 }
 

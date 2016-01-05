@@ -49,7 +49,7 @@ Start node-red-1880. Go to the editor at <http://localhost:1880> and select Impo
 
 ```json
 [{
-    "id": "f1638095.0e9c8",
+    "id": "d707b1e0.28f85",
     "type": "inject",
     "z": "ad35591f.52caa8",
     "name": "",
@@ -59,23 +59,30 @@ Start node-red-1880. Go to the editor at <http://localhost:1880> and select Impo
     "repeat": "",
     "crontab": "",
     "once": false,
-    "x": 143,
-    "y": 84,
+    "x": 159,
+    "y": 98,
     "wires": [
-        ["2446251.fdbb9da"]
+        ["6e701f2e.918fe"]
     ],
-    "constraints": {}
+    "constraints": {
+        "run on device 1880": {
+            "id": "run on device 1880",
+            "deviceId": "1880",
+            "fill": "#ad98d6",
+            "text": "run on device 1880"
+        }
+    }
 }, {
-    "id": "2446251.fdbb9da",
+    "id": "6e701f2e.918fe",
     "type": "file in",
     "z": "ad35591f.52caa8",
     "name": "",
     "filename": "dnr.test",
     "format": "utf8",
-    "x": 246,
-    "y": 192,
+    "x": 262,
+    "y": 206,
     "wires": [
-        ["cfae26fe.3051d8"]
+        ["4f480e35.b0b7f"]
     ],
     "constraints": {
         "run on device 1881": {
@@ -86,17 +93,24 @@ Start node-red-1880. Go to the editor at <http://localhost:1880> and select Impo
         }
     }
 }, {
-    "id": "cfae26fe.3051d8",
+    "id": "4f480e35.b0b7f",
     "type": "debug",
     "z": "ad35591f.52caa8",
     "name": "",
     "active": true,
     "console": "false",
     "complete": "false",
-    "x": 481,
-    "y": 114,
+    "x": 497,
+    "y": 128,
     "wires": [],
-    "constraints": {}
+    "constraints": {
+        "run on device 1880": {
+            "id": "run on device 1880",
+            "deviceId": "1880",
+            "fill": "#ad98d6",
+            "text": "run on device 1880"
+        }
+    }
 }]
 ```
 
@@ -112,14 +126,6 @@ cd ..
 cd node-red-1881
 node red
 ```
-
-Go to <http://localhost:1881>
-
-Modify the flow in device 1881:
-* delete the "run on device 1881" constraint on the File In node by clicking on the constraint
-* create a new constraint by clicking "New Constraint", put in "run on device 1880" on the Constraint Id, 1880 on the deviceId box. Click ok.
-* select the Debug and Inject nodes and apply the newly created constraint by clicking on it in the drop down menu next to the New Constraint button. Click on a blank space in the editor to refresh the view.
-* click on Deploy button
 
 Now test triggering the Inject node.
 * trigger the Inject nodes in either <http://localhost:1880> or <http://localhost:1881>, "1881" shows up on the Debug console
