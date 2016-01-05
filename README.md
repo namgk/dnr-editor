@@ -2,6 +2,8 @@
 
 Node-RED is a visual tool for wiring the Internet of Things.  The Distributed Node-RED (DNR) project extends Node-RED to support flows that can be distributed between devices.  This code is work in progress.
 
+[![Distributed Node-RED](https://github.com/namgk/node-red/raw/master/dnr.png)](#features)
+
 The idea of DNR:
 
 * every device has a capability/property definition such as storage, memory or geographic location.
