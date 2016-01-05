@@ -26,7 +26,7 @@ Check out <http://nodered.org> for full instructions on getting started with Nod
 5. node red
 6. Open <http://localhost:1880>
 
-# Testing with two processes in one device (e.g laptop)
+### Testing with two processes in one device (e.g laptop)
 Clone the code into two different directories, such as node-red-1880 and node-red-1881. 
 
 Modify settings.js in node-red-1881 to differentiate these two processes:
