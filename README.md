@@ -32,6 +32,7 @@ Clone the code into two different directories, such as node-red-1880 and node-re
 Modify settings.js in node-red-1881 to differentiate these two processes:
 ```bash
 cd node-red-1881
+vi settings.js
 ```
 * set the port to 1881
 * set the deviceId to 1881
@@ -42,7 +43,7 @@ Modify dnr.test for testing purpose:
 echo "1881" > dnr.test
 ```
 
-Start node-red-1880. Go to the editor and select Import > Clipboard from the menu at the top right conner. Paste the following example flow and click ok. The example flow read content from a file and output it to the Debug node. The idea is to demonstrate how the File node is run on different device that read files on that device, not the current running device.
+Start node-red-1880. Go to the editor at <http://localhost:1880> and select Import > Clipboard from the menu at the top right conner. Paste the following example flow and click ok. The example flow read content from a file and output it to the Debug node. The idea is to demonstrate how a File In node is run on different device that read files on that device, not the current running device.
 
 ```json
 [{
@@ -99,7 +100,7 @@ Start node-red-1880. Go to the editor and select Import > Clipboard from the men
 
 Click on Deploy button to run this flow on node-red-1880. If you click on the Inject trigger, there will be no output on the Debug console because the node File isn't being run on the current device.
 
-After this, a new flow file will be created on the default location as stated in the settings.js. For example, /home/user/.node-red/flow_...local.json
+After this, a new flow file will be created on the default location as configured in the settings.js. For example, /home/user/.node-red/flow_...local.json
 
 Copy this file to /home/user/.node-red2 for the second DNR process.
 
@@ -113,20 +114,20 @@ node red
 Go to <http://localhost:1881>
 
 Modify the flow in device 1881:
-* delete the "run on device 1881" constraint on the File In node by clickin on the constraint
+* delete the "run on device 1881" constraint on the File In node by clicking on the constraint
 * create a new constraint by clicking "New Constraint", put in "run on device 1880" on the Constraint Id, 1880 on the deviceId box. Click ok.
 * select the Debug and Inject nodes and apply the newly created constraint by clicking on it in the drop down menu next to the New Constraint button. Click on a blank space in the editor to refresh the view.
 * click on Deploy button
 
 Now test triggering the Inject node.
-* trigger the Inject nodes in either <http://localhost:1880> or <http://localhost:1881>, 1881 shows up on the Debug console
+* trigger the Inject nodes in either <http://localhost:1880> or <http://localhost:1881>, "1881" shows up on the Debug console
 * the Debug console in <http://localhost:1881> does not show anything
 
-This is because the File In node is run on the device 1881 and read the dnr.test file in that device instead of in device 1880. On the other hand, the Debug node is constrained to run on device 1880 so that the Debug console on <http://localhost:1881> won't be showing anything.
+This is because the File In node is run on the device 1881 and read the dnr.test file in that device (whose content is "1881") instead of in device 1880. On the other hand, the Debug node is constrained to run on device 1880 so that the Debug console on <http://localhost:1881> won't be showing anything.
 
-Documentation on Node-RED can be found [here](http://nodered.org/docs/).
 
 ## Support
+Documentation on Node-RED can be found [here](http://nodered.org/docs/).
 
 For support or questions related to DNR, please contact [@mblackstock](http://twitter.com/mblackstock) or Nam Giang at <kyng@ece.ubc.ca>.
 
