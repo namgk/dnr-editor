@@ -1,6 +1,6 @@
 var typeRegistry = require("./registry");
 var clone = require("clone");
-var settings = require('../../settings.js');
+var settings = require('../../../settings.js');
 
 function process(nodeConfig){
 	var constraints = nodeConfig.constraints;
