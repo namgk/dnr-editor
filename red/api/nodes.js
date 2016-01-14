@@ -13,22 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-var redNodes = require("../nodes");
-var comms = require("../comms");
-var log = require("../log");
-var i18n = require("../i18n");
 
 var when = require("when");
-
-var settings = require("../settings");
+var comms = require("./comms");
+var locales = require("./locales");
+var redNodes;
+var log;
+var i18n;
+var settings;
 
 module.exports = {
+    init: function(runtime) {
+        redNodes = runtime.nodes;
+        log = runtime.log;
+        i18n = runtime.i18n;
+        settings = runtime.settings;
+    },
     getAll: function(req,res) {
         if (req.get("accept") == "application/json") {
             log.audit({event: "nodes.list.get"},req);
             res.json(redNodes.getNodeList());
         } else {
-            var lang = i18n.determineLangFromHeaders(req.acceptsLanguages());
+            var lang = locales.determineLangFromHeaders(req.acceptsLanguages());
             log.audit({event: "nodes.configs.get"},req);
             res.send(redNodes.getNodeConfigs(lang));
         }
@@ -121,7 +127,7 @@ module.exports = {
                 res.status(404).end();
             }
         } else {
-            var lang = i18n.determineLangFromHeaders(req.acceptsLanguages());
+            var lang = locales.determineLangFromHeaders(req.acceptsLanguages());
             result = redNodes.getNodeConfig(id,lang);
             if (result) {
                 log.audit({event: "nodes.config.get",id:id},req);

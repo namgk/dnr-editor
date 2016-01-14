@@ -47,23 +47,35 @@
          border-top-right-radius: 4px;
          border-bottom-right-radius: 4px;
      }
- }
- .config_node_type {
-     color: #999;
-     text-align: right;
-     padding-right: 3px;
-     &:not(:first-child) {
-         margin-top: 20px;
-     }
- }
- .config_node_none {
-     color: #ddd;
-     text-align:right;
-     padding-right: 3px;
- }
- .config_node_unused {
-     border-color: #aaa;
-     background: #f9f9f9;
-     border-style: dashed;
-     color: #aaa;
- }
+}
+.config_node_type {
+    color: #999;
+    text-align: right;
+    padding-right: 3px;
+    &:not(:first-child) {
+        margin-top: 20px;
+    }
+}
+.config_node_none {
+    color: #ddd;
+    text-align:right;
+    padding-right: 3px;
+}
+.config_node_unused {
+    border-color: #aaa;
+    background: #f9f9f9;
+    border-style: dashed;
+    color: #aaa;
+}
+.config-node-filter-info {
+    position: absolute;
+    top: 0;
+    right:0;
+    height: 38px;
+    line-height: 38px;
+    padding: 0 8px;
+    background: $palette-header-background;
+    font-size: 0.8em;
+    color: #999;
+    font-weight: normal;
+}

@@ -28,7 +28,6 @@ RED.workspaces = (function() {
             var tabId = RED.nodes.id();
             do {
                 workspaceIndex += 1;
-                //TODO: nls of Sheet
             } while($("#workspace-tabs a[title='"+RED._('workspace.defaultName',{number:workspaceIndex})+"']").size() !== 0);
 
             ws = {type:"tab",id:tabId,label:RED._('workspace.defaultName',{number:workspaceIndex})};
@@ -55,6 +54,7 @@ RED.workspaces = (function() {
             historyEvent.workspaces = [ws];
             RED.history.push(historyEvent);
             RED.nodes.dirty(true);
+            RED.sidebar.config.refresh();
         } else {
             $( "#node-dialog-delete-workspace" ).dialog('option','workspace',ws);
             $( "#node-dialog-delete-workspace-content" ).text(RED._("workspace.delete",{label:ws.label}));
@@ -141,8 +141,8 @@ RED.workspaces = (function() {
                         if (workspace.label != label) {
                             workspace_tabs.renameTab(workspace.id,label);
                             RED.nodes.dirty(true);
+                            RED.sidebar.config.refresh();
                             $("#menu-item-workspace-menu-"+workspace.id.replace(".","-")).text(label);
-                            // TODO: update entry in menu
                         }
                         $( this ).dialog( "close" );
                     }

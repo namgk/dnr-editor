@@ -1,5 +1,5 @@
 /**
- * Copyright 2013, 2015 IBM Corp.
+ * Copyright 2013, 2016 IBM Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,6 +80,12 @@ RED.history = (function() {
                             }
                         }
                     }
+                    if (ev.removedLinks) {
+                        for (i=0;i<ev.removedLinks.length;i++) {
+                            RED.nodes.addLink(ev.removedLinks[i]);
+                        }
+                    }
+
                 } else if (ev.t == "delete") {
                     if (ev.workspaces) {
                         for (i=0;i<ev.workspaces.length;i++) {
@@ -167,6 +173,17 @@ RED.history = (function() {
                         n.n.x = n.ox;
                         n.n.y = n.oy;
                         n.n.dirty = true;
+                    }
+                    // A move could have caused a link splice
+                    if (ev.links) {
+                        for (i=0;i<ev.links.length;i++) {
+                            RED.nodes.removeLink(ev.links[i]);
+                        }
+                    }
+                    if (ev.removedLinks) {
+                        for (i=0;i<ev.removedLinks.length;i++) {
+                            RED.nodes.addLink(ev.removedLinks[i]);
+                        }
                     }
                 } else if (ev.t == "edit") {
                     for (i in ev.changes) {
@@ -265,6 +282,7 @@ RED.history = (function() {
                 RED.view.redraw(true);
                 RED.palette.refresh();
                 RED.workspaces.refresh();
+                RED.sidebar.config.refresh();
             }
         }
     }

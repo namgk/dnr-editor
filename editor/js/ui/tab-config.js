@@ -1,5 +1,5 @@
 /**
- * Copyright 2013, 2015 IBM Corp.
+ * Copyright 2013, 2016 IBM Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,24 +19,115 @@ RED.sidebar.config = (function() {
     var content = document.createElement("div");
     content.className = "sidebar-node-config"
 
-    $('<div class="palette-category">'+
-      '<div class="workspace-config-node-tray-header palette-header"><i class="fa fa-angle-down expanded"></i><span data-i18n="sidebar.config.local"></span></div>'+
-    '<ul id="workspace-config-node-tray-locals" class="palette-content config-node-list"></ul>'+
-    '</div>'+
-    '<div class="palette-category">'+
-        '<div class="workspace-config-node-tray-header palette-header"><i class="fa fa-angle-down expanded"></i><span data-i18n="sidebar.config.global"></span></div>'+
-        '<ul id="workspace-config-node-tray-globals" class="palette-content config-node-list"></ul>'+
-    '</div>').appendTo(content);
+    $('<div class="button-group sidebar-header">'+
+      '<a class="sidebar-header-button selected" id="workspace-config-node-filter-all" href="#"><span data-i18n="sidebar.config.filterAll"></span></a>'+
+      '<a class="sidebar-header-button" id="workspace-config-node-filter-unused" href="#"><span data-i18n="sidebar.config.filterUnused"></span></a> '+
+      '</div>'
+    ).appendTo(content);
 
-    function createConfigNodeList(nodes,list) {
+
+    var toolbar = $('<div>'+
+        '<a class="sidebar-footer-button" id="workspace-config-node-collapse-all" href="#"><i class="fa fa-angle-double-up"></i></a> '+
+        '<a class="sidebar-footer-button" id="workspace-config-node-expand-all" href="#"><i class="fa fa-angle-double-down"></i></a>'+
+        '</div>');
+
+    var globalCategories = $("<div>").appendTo(content);
+    var flowCategories = $("<div>").appendTo(content);
+    var subflowCategories = $("<div>").appendTo(content);
+
+    var showUnusedOnly = false;
+
+    var categories = {};
+
+    function getOrCreateCategory(name,parent,label) {
+        name = name.replace(/\./i,"-");
+        if (!categories[name]) {
+            var container = $('<div class="palette-category workspace-config-node-category" id="workspace-config-node-category-'+name+'"></div>').appendTo(parent);
+            var header = $('<div class="workspace-config-node-tray-header palette-header"><i class="fa fa-angle-down expanded"></i></div>').appendTo(container);
+            if (label) {
+                $('<span class="config-node-label"/>').text(label).appendTo(header);
+            } else {
+                $('<span class="config-node-label" data-i18n="sidebar.config.'+name+'">').appendTo(header);
+            }
+            $('<span class="config-node-filter-info"></span>').appendTo(header);
+            category = $('<ul class="palette-content config-node-list"></ul>').appendTo(container);
+            container.i18n();
+            var icon = header.find("i");
+            var result = {
+                label: label,
+                list: category,
+                size: function() {
+                    return result.list.find("li:not(.config_node_none)").length
+                },
+                open: function(snap) {
+                    if (!icon.hasClass("expanded")) {
+                        icon.addClass("expanded");
+                        if (snap) {
+                            result.list.show();
+                        } else {
+                            result.list.slideDown();
+                        }
+                    }
+                },
+                close: function(snap) {
+                    if (icon.hasClass("expanded")) {
+                        icon.removeClass("expanded");
+                        if (snap) {
+                            result.list.hide();
+                        } else {
+                            result.list.slideUp();
+                        }
+                    }
+                },
+                isOpen: function() {
+                    return icon.hasClass("expanded");
+                }
+            };
+
+            header.on('click', function(e) {
+                if (result.isOpen()) {
+                    result.close();
+                } else {
+                    result.open();
+                }
+            });
+            categories[name] = result;
+        } else {
+            if (categories[name].label !== label) {
+                categories[name].list.parent().find('.config-node-label').text(label);
+                categories[name].label = label;
+            }
+        }
+        return categories[name];
+    }
+
+    function createConfigNodeList(id,nodes) {
+        var category = getOrCreateCategory(id.replace(/\./i,"-"))
+        var list = category.list;
+
         nodes.sort(function(A,B) {
             if (A.type < B.type) { return -1;}
             if (A.type > B.type) { return 1;}
             return 0;
         });
+        if (showUnusedOnly) {
+            var hiddenCount = nodes.length;
+            nodes = nodes.filter(function(n) {
+                return n.users.length === 0;
+            })
+            hiddenCount = hiddenCount - nodes.length;
+            if (hiddenCount > 0) {
+                list.parent().find('.config-node-filter-info').text(RED._('sidebar.config.filtered',{count:hiddenCount})).show();
+            } else {
+                list.parent().find('.config-node-filter-info').hide();
+            }
+        } else {
+            list.parent().find('.config-node-filter-info').hide();
+        }
         list.empty();
         if (nodes.length === 0) {
             $('<li class="config_node_none" data-i18n="sidebar.config.none">NONE</li>').i18n().appendTo(list);
+            category.close(true);
         } else {
             var currentType = "";
             nodes.forEach(function(node) {
@@ -86,23 +177,46 @@ RED.sidebar.config = (function() {
                     RED.view.redraw();
                 });
             });
+            category.open(true);
         }
     }
 
     function refreshConfigNodeList() {
+        var validList = {"global":true};
 
-        var localConfigNodes = [];
+        getOrCreateCategory("global",globalCategories);
+
+        RED.nodes.eachWorkspace(function(ws) {
+            validList[ws.id.replace(/\./g,"-")] = true;
+            getOrCreateCategory(ws.id,flowCategories,ws.label);
+        })
+        RED.nodes.eachSubflow(function(sf) {
+            validList[sf.id.replace(/\./g,"-")] = true;
+            getOrCreateCategory(sf.id,subflowCategories,sf.name);
+        })
+        $(".workspace-config-node-category").each(function() {
+            var id = $(this).attr('id').substring("workspace-config-node-category-".length);
+            if (!validList[id]) {
+                $(this).remove();
+                delete categories[id];
+            }
+        })
         var globalConfigNodes = [];
-
+        var configList = {};
         RED.nodes.eachConfig(function(cn) {
-            if (cn.z == RED.workspaces.active()) {
-                localConfigNodes.push(cn);
+            if (cn.z) {//} == RED.workspaces.active()) {
+                configList[cn.z.replace(/\./g,"-")] = configList[cn.z.replace(/\./g,"-")]||[];
+                configList[cn.z.replace(/\./g,"-")].push(cn);
             } else if (!cn.z) {
                 globalConfigNodes.push(cn);
             }
         });
-        createConfigNodeList(localConfigNodes,$("#workspace-config-node-tray-locals"));
-        createConfigNodeList(globalConfigNodes,$("#workspace-config-node-tray-globals"));
+        for (var id in validList) {
+            if (validList.hasOwnProperty(id)) {
+                createConfigNodeList(id,configList[id]||[]);
+            }
+        }
+        createConfigNodeList('global',globalConfigNodes);
     }
 
     function init() {
@@ -111,25 +225,63 @@ RED.sidebar.config = (function() {
             label: RED._("sidebar.config.label"),
             name: RED._("sidebar.config.name"),
             content: content,
+            toolbar: toolbar,
             closeable: true,
             visible: false,
             onchange: function() { refreshConfigNodeList(); }
         });
 
-        $(".workspace-config-node-tray-header").on('click', function(e) {
-            var icon = $(this).find("i");
-            if (icon.hasClass("expanded")) {
-                icon.removeClass("expanded");
-                $(this).next().slideUp();
-            } else {
-                icon.addClass("expanded");
-                $(this).next().slideDown();
-            }
+        RED.menu.setAction('menu-item-config-nodes',function() {
+            RED.sidebar.show('config');
+        })
 
+        $("#workspace-config-node-collapse-all").on("click", function(e) {
+            e.preventDefault();
+            for (var cat in categories) {
+                if (categories.hasOwnProperty(cat)) {
+                    categories[cat].close();
+                }
+            }
+        });
+        $("#workspace-config-node-expand-all").on("click", function(e) {
+            e.preventDefault();
+            for (var cat in categories) {
+                if (categories.hasOwnProperty(cat)) {
+                    if (categories[cat].size() > 0) {
+                        categories[cat].open();
+                    }
+                }
+            }
+        });
+        $('#workspace-config-node-filter-all').on("click",function(e) {
+            e.preventDefault();
+            if (showUnusedOnly) {
+                $(this).addClass('selected');
+                $('#workspace-config-node-filter-unused').removeClass('selected');
+                showUnusedOnly = !showUnusedOnly;
+                refreshConfigNodeList();
+            }
+        });
+        $('#workspace-config-node-filter-unused').on("click",function(e) {
+            e.preventDefault();
+            if (!showUnusedOnly) {
+                $(this).addClass('selected');
+                $('#workspace-config-node-filter-all').removeClass('selected');
+                showUnusedOnly = !showUnusedOnly;
+                refreshConfigNodeList();
+            }
         });
 
+
     }
-    function show() {
+    function show(unused) {
+        if (unused !== undefined) {
+            if (unused) {
+                $('#workspace-config-node-filter-unused').click();
+            } else {
+                $('#workspace-config-node-filter-all').click();
+            }
+        }
         refreshConfigNodeList();
         RED.sidebar.show("config");
     }

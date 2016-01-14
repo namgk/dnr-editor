@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 IBM Corp.
+ * Copyright 2016 IBM Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,13 +208,13 @@ RED.deploy = (function() {
                         .html("<li>"+invalidNodes.map(function(A) { return (A.tab?"["+A.tab+"] ":"")+A.label+" ("+A.type+")"}).join("</li><li>")+"</li>");
 
                 } else if (hasUnusedConfig && !ignoreDeployWarnings.unusedConfig) {
-                    showWarning = true;
-                    $( "#node-dialog-confirm-deploy-type" ).val("unusedConfig");
-                    $( "#node-dialog-confirm-deploy-unused" ).show();
-
-                    unusedConfigNodes.sort(sortNodeInfo);
-                    $( "#node-dialog-confirm-deploy-unused-list" )
-                        .html("<li>"+unusedConfigNodes.map(function(A) { return (A.tab?"["+A.tab+"] ":"")+A.label+" ("+A.type+")"}).join("</li><li>")+"</li>");
+                    // showWarning = true;
+                    // $( "#node-dialog-confirm-deploy-type" ).val("unusedConfig");
+                    // $( "#node-dialog-confirm-deploy-unused" ).show();
+                    //
+                    // unusedConfigNodes.sort(sortNodeInfo);
+                    // $( "#node-dialog-confirm-deploy-unused-list" )
+                    //     .html("<li>"+unusedConfigNodes.map(function(A) { return (A.tab?"["+A.tab+"] ":"")+A.label+" ("+A.type+")"}).join("</li><li>")+"</li>");
                 }
                 if (showWarning) {
                     $( "#node-dialog-confirm-deploy-hide" ).prop("checked",false);
@@ -241,7 +241,13 @@ RED.deploy = (function() {
                     "Node-RED-Deployment-Type":deploymentType
                 }
             }).done(function(data,textStatus,xhr) {
-                RED.notify(RED._("deploy.successfulDeploy"),"success");
+                if (hasUnusedConfig) {
+                    RED.notify(
+                    '<p>'+RED._("deploy.successfulDeploy")+'</p>'+
+                    '<p>'+RED._("deploy.unusedConfigNodes")+' <a href="#" onclick="RED.sidebar.config.show(true); return false;">'+RED._("deploy.unusedConfigNodesLink")+'</a></p>',"success",false,6000);
+                } else {
+                    RED.notify(RED._("deploy.successfulDeploy"),"success");
+                }
                 RED.nodes.eachNode(function(node) {
                     if (node.changed) {
                         node.dirty = true;

@@ -126,14 +126,15 @@ module.exports = function(grunt) {
                   "editor/js/ui/library.js",
                   "editor/js/ui/notifications.js",
                   "editor/js/ui/subflow.js",
-                  "editor/js/ui/touch/radialMenu.js"
+                  "editor/js/ui/touch/radialMenu.js",
+                  "editor/js/ui/typedInput.js"
               ],
               dest: "public/red/red.js"
             },
             vendor: {
                 files: {
                     "public/vendor/vendor.js": [
-                        "editor/vendor/jquery/js/jquery-1.11.1.min.js",
+                        "editor/vendor/jquery/js/jquery-1.11.3.min.js",
                         "editor/vendor/bootstrap/js/bootstrap.min.js",
                         "editor/vendor/jquery/js/jquery-ui-1.10.3.custom.min.js",
                         "editor/vendor/jquery/js/jquery.ui.touch-punch.min.js",
@@ -176,8 +177,8 @@ module.exports = function(grunt) {
             messages: {
                 src: [
                     'nodes/core/locales/en-US/messages.json',
-                    'locales/en-US/editor.json',
-                    'locales/en-US/runtime.json'
+                    'red/api/locales/en-US/editor.json',
+                    'red/runtime/locales/en-US/runtime.json'
                 ]
             }
         },
@@ -225,8 +226,8 @@ module.exports = function(grunt) {
             json: {
                 files: [
                     'nodes/core/locales/en-US/messages.json',
-                    'locales/en-US/editor.json',
-                    'locales/en-US/runtime.json'
+                    'red/api/locales/en-US/editor.json',
+                    'red/runtime/locales/en-US/runtime.json'
                 ],
                 tasks: ['jsonlint:messages']
             }
@@ -240,7 +241,7 @@ module.exports = function(grunt) {
                     args: nodemonArgs,
                     ext: 'js,html,json',
                     watch: [
-                        'red','nodes','locales'
+                        'red','nodes'
                     ]
                 }
             }
@@ -304,8 +305,7 @@ module.exports = function(grunt) {
                         'red/**',
                         'public/**',
                         'editor/templates/**',
-                        'bin/**',
-                        'locales/**'
+                        'bin/**'
                     ],
                     dest: path.resolve('<%= paths.dist %>/node-red-<%= pkg.version %>')
                 }]

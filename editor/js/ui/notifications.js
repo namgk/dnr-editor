@@ -1,5 +1,5 @@
 /**
- * Copyright 2013 IBM Corp.
+ * Copyright 2013, 2016 IBM Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,13 @@ RED.notify = (function() {
             };
         })();
         if (!fixed) {
+            $(n).click((function() {
+                var nn = n;
+                return function() {
+                    nn.close();
+                    window.clearTimeout(nn.timeoutid);
+                };
+            })());
             n.timeoutid = window.setTimeout(n.close,timeout||3000);
         }
         currentNotifications.push(n);

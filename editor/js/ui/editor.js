@@ -150,9 +150,9 @@ RED.editor = (function() {
                     node.ports.pop();
                 }
                 RED.nodes.eachLink(function(l) {
-                        if (l.source === node && l.sourcePort >= node.outputs) {
-                            removedLinks.push(l);
-                        }
+                    if (l.source === node && l.sourcePort >= node.outputs) {
+                        removedLinks.push(l);
+                    }
                 });
             } else if (node.outputs > node.ports.length) {
                 while (node.outputs > node.ports.length) {
@@ -305,7 +305,7 @@ RED.editor = (function() {
                                 }
                                 editing_node.dirty = true;
                                 validateNode(editing_node);
-                                RED.view.redraw();
+                                RED.view.redraw(true);
                             }
                             $( this ).dialog( "close" );
                         }
@@ -348,6 +348,10 @@ RED.editor = (function() {
                 resize: function(e,ui) {
                     if (editing_node) {
                         $(this).dialog('option',"sizeCache-"+editing_node.type,ui.size);
+                        if (editing_node._def.oneditresize) {
+                            var form = $("#dialog-form");
+                            editing_node._def.oneditresize.call(editing_node,{width:form.width(),height:form.height()});
+                        }
                     }
                 },
                 open: function(e) {
@@ -363,6 +367,12 @@ RED.editor = (function() {
                         if (size) {
                             $(this).dialog('option','width',size.width);
                             $(this).dialog('option','height',size.height);
+                        }
+                        if (editing_node._def.oneditresize) {
+                            setTimeout(function() {
+                                var form = $("#dialog-form");
+                                editing_node._def.oneditresize.call(editing_node,{width:form.width(),height:form.height()});
+                            },0);
                         }
                     }
                 },
@@ -385,6 +395,12 @@ RED.editor = (function() {
                     }
                     editing_node = null;
                 }
+        }).parent().on('keydown', function(evt) {
+            if (evt.keyCode === $.ui.keyCode.ESCAPE && (evt.metaKey || evt.ctrlKey)) {
+                $("#node-dialog-cancel").click();
+            } else if (evt.keyCode === $.ui.keyCode.ENTER && (evt.metaKey || evt.ctrlKey)) {
+                $("#node-dialog-ok").click();
+            }
         });
     }
 
@@ -1008,6 +1024,12 @@ RED.editor = (function() {
                         cancel: '.ui-dialog-content, .ui-dialog-titlebar-close, #node-config-dialog-scope-container'
                     });
                 }
+        }).parent().on('keydown', function(evt) {
+            if (evt.keyCode === $.ui.keyCode.ESCAPE && (evt.metaKey || evt.ctrlKey)) {
+                $("#node-config-dialog-cancel").click();
+            } else if (evt.keyCode === $.ui.keyCode.ENTER && (evt.metaKey || evt.ctrlKey)) {
+                $("#node-config-dialog-ok").click();
+            }
         });
     }
 
@@ -1079,7 +1101,7 @@ RED.editor = (function() {
                                 RED.history.push(historyEvent);
                             }
                             editing_node.dirty = true;
-                            RED.view.redraw();
+                            RED.view.redraw(true);
                         }
                         $( this ).dialog( "close" );
                     }
@@ -1128,6 +1150,12 @@ RED.editor = (function() {
                 height -= (parseInt($("#subflow-dialog>form").css("marginTop"))+parseInt($("#subflow-dialog>form").css("marginBottom")));
                 $(".node-text-editor").css("height",height+"px");
                 subflowEditor.resize();
+            }
+        }).parent().on('keydown', function(evt) {
+            if (evt.keyCode === $.ui.keyCode.ESCAPE && (evt.metaKey || evt.ctrlKey)) {
+                $("#subflow-dialog-cancel").click();
+            } else if (evt.keyCode === $.ui.keyCode.ENTER && (evt.metaKey || evt.ctrlKey)) {
+                $("#subflow-dialog-ok").click();
             }
         });
     }

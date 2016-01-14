@@ -37,8 +37,6 @@
             "repeat": "Repeat"
         },
         "timestamp": "timestamp",
-        "string": "string",
-        "blank": "blank",
         "none": "none",
         "interval": "interval",
         "interval-time": "interval between times",
@@ -138,7 +136,8 @@
     "template": {
         "label": {
             "template": "Template",
-            "property": "Property"
+            "property": "Property",
+            "format": "Syntax Highlight"
         },
         "templatevalue": "This is the payload: {{payload}} !"
     },
@@ -459,7 +458,8 @@
             "replace": "Replace with"
         },
         "errors": {
-            "invalid-from": "Invalid 'from' property: __error__"
+            "invalid-from": "Invalid 'from' property: __error__",
+            "invalid-json": "Invalid 'to' JSON property"
         }
     },
     "range": {
