@@ -15,7 +15,7 @@
  **/
 
 var util = require("util");
-var redUtil = require("../red/util");
+var redUtil = require("../red/runtime/util");
 
 module.exports = function(RED) {
     "use strict";
@@ -53,18 +53,18 @@ module.exports = function(RED) {
         //TODO: find a proper way to handle node status
         me.client.connect();
 
-        console.log('DEBUG: DNRNode created for node\n' + JSON.stringify(n));
+        util.log('[info] [dnr] DNRNode created for node ' + n.id + ' (' + n.type + ')');
 
         // Listen to: MQTT_PREFIX/n.id-outwire
         var outWires = n.wires;
         for (var i = 0; i< outWires.length; i++){
             var brokerTopic = MQTT_PREFIX + n.id + '-' + outWires[i];
-            console.log('DEBUG: DNRNode subscribing to: ' + brokerTopic);
+            util.log('[info] [dnr] DNRNode subscribing to: ' + brokerTopic);
             me.client.subscribe(brokerTopic,
                 2,
                 function(topic,payload,qos,retain) {
                     var msg = JSON.parse(payload);
-                    console.log('DEBUG: DNRNode got message from broker: \n' + payload);
+                    util.log('[info] [dnr] DNRNode got from broker: \n' + payload);
                     me.send(msg);
                 }
            );
@@ -76,8 +76,8 @@ module.exports = function(RED) {
                 return;
 
             if (!msg._origin){
-                console.log('CRITICAL DNR ERROR: cannot determine topic for publishing msg to broker');
-                console.log('msg dropped!');
+                util.log('[info] [dnr] CRITICAL DNR ERROR: cannot determine topic for publishing msg to broker');
+                util.log('[info] [dnr] msg dropped!');
                 return;
             }
 
@@ -86,7 +86,7 @@ module.exports = function(RED) {
                 topic: MQTT_PREFIX + msg._origin + '-' + n.id
             };
 
-            console.log('DEBUG: DNRNode send message to broker: \n' + JSON.stringify(dnrMsg));
+            util.log('[info] [dnr] DNRNode publishing to: ' + dnrMsg.topic);
             me.client.publish(dnrMsg);
         })
 

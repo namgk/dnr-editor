@@ -195,7 +195,6 @@ Node.prototype.send = function(msg) {
 };
 
 Node.prototype.receive = function(msg) {
-    console.log('DEBUG: node receive msg\n' + JSON.stringify(msg));
     if (!msg) {
         msg = {};
     }

@@ -52,6 +52,7 @@
       var constraintMenu = {
           id:"menu-item-constraints",
           toggle:true,
+          selected: true,
           label:RED._("menu.label.displayConstraints"),
           onselect:function(s) { toggleConstraints(s)}
         };

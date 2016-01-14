@@ -61,6 +61,7 @@ function Flow(global,flow) {
                 node = flow.nodes[id];
                 if (!node.subflow) {
                     if (!activeNodes[id]) {
+                        newNode = createNode(node.type,node);
                         if (newNode) {
                             activeNodes[id] = newNode;
                         }

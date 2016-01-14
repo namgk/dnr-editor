@@ -235,7 +235,6 @@ function start(type,diff,muteLog) {
         }
     }
     var id;
-    console.log('DEBUG: activeFlowConfig \n' + JSON.stringify(activeFlowConfig));
     if (!diff) {
         if (!activeFlows['global']) {
             activeFlows['global'] = Flow.create(activeFlowConfig);

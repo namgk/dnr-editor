@@ -42,7 +42,6 @@ module.exports = {
     diffNodes: diffNodes,
 
     parseConfig: function(config) {
-        console.log('DEBUG: parseConfig \n' + JSON.stringify(config));
         var flow = {};
         flow.allNodes = {};
         flow.subflows = {};
