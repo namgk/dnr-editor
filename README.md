@@ -11,9 +11,11 @@ The idea of DNR:
 * if a node is not to be run on a device due to the device not meeting the required constraints, such node will be replaced to a special node called DNRNode. DNRNode forwards the messages back and forth between the device where this node run and the current device.
 * mechanism for all participating devices to download the distributed flow from a 'master' device such as a cloud server.
 
-For more information on our initial ideas, see these [presentation](http://www.slideshare.net/MichaelBlackstock/wo-t-2014-blackstock-2), [presentation](http://www.slideshare.net/namnhong/developing-io-t-applications-in-the-fog-a-distributed-dataflow-approach) and assocated [paper](http://www.webofthings.org/wp-content/uploads/2009/07/wot20140_submission_1.pdf) presented at the [Web of Things 2014 workshop](http://www.webofthings.org/events/wot/). Watch this space for more information on how to configure and run the system.
+For more information on our initial ideas, see these [presentation](http://www.slideshare.net/MichaelBlackstock/wo-t-2014-blackstock-2), [presentation](http://www.slideshare.net/namnhong/developing-io-t-applications-in-the-fog-a-distributed-dataflow-approach) and assocated [paper](http://www.webofthings.org/wp-content/uploads/2009/07/wot20140_submission_1.pdf), [paper](https://www.researchgate.net/publication/290435774_Developing_IoT_Applications_in_the_Fog_a_Distributed_Dataflow_Approach). 
 
-In the meantime, feel free to contact [@mblackstock](http://twitter.com/mblackstock) or <kyng@ece.ubc.ca> for more info.
+An initial version of DNR is also available at <https://github.com/mblackstock/node-red-contrib/>.
+
+Watch this space for more information on how to configure and run the system.
 
 ## Quick Start
 
@@ -128,18 +130,15 @@ node red
 ```
 
 Now test triggering the Inject node.
-* trigger the Inject nodes in either <http://localhost:1880> or <http://localhost:1881>, "1881" shows up on the Debug console
+* trigger the Inject nodes in either <http://localhost:1880> or <http://localhost:1881>, "1881" shows up on the Debug console of device 1880
 * the Debug console in <http://localhost:1881> does not show anything
 
 This is because the File In node is run on the device 1881 and read the dnr.test file in that device (whose content is "1881") instead of in device 1880. On the other hand, the Debug node is constrained to run on device 1880 so that the Debug console on <http://localhost:1881> won't be showing anything.
 
-
 ## Support
-Documentation on Node-RED can be found [here](http://nodered.org/docs/).
+Documentation on vanilla Node-RED can be found [here](http://nodered.org/docs/).
 
 For support or questions related to DNR, please contact [@mblackstock](http://twitter.com/mblackstock) or Nam Giang at <kyng@ece.ubc.ca>.
-
-For further help, or general discussion related to Node-RED, there is also a [mailing list](https://groups.google.com/forum/#!forum/node-red).
 
 ## Browser Support
 
@@ -158,7 +157,7 @@ Node-RED is a creation of [IBM Emerging Technology](http://ibm.com/blogs/et).
 
 For more open-source projects from IBM, head over [here](http://ibm.github.io).
 
-DNR is an extension of Node-RED by Mike Blackstock [@mblackstock](http://twitter.com/mblackstock)
+DNR is an extension of Node-RED by Mike Blackstock [@mblackstock](http://twitter.com/mblackstock) and Nam Giang <kyng@ece.ubc.ca>
 
 ## Copyright and license
 
