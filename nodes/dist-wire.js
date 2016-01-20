@@ -46,7 +46,7 @@ module.exports = function(RED) {
         me.client = connectionPool.get(
             MQTT_HOST, 
             MQTT_PORT, 
-            MQTT_CLIENTID, 
+            n.id, 
             MQTT_USERNAME, 
             MQTT_PASSWORD);
 
@@ -64,6 +64,7 @@ module.exports = function(RED) {
                 2,
                 function(topic,payload,qos,retain) {
                     var msg = JSON.parse(payload);
+                    msg._dnr = n.id;
                     util.log('[info] [dnr] DNRNode got from broker: \n' + payload);
                     me.send(msg);
                 }
@@ -80,6 +81,10 @@ module.exports = function(RED) {
                 util.log('[info] [dnr] msg dropped!');
                 return;
             }
+
+            // if the sender of this msg is a DNRNode, ignore to avoid pub/sub loop!
+            if (msg._dnr === msg._origin)
+                return;
 
             var dnrMsg = {
                 payload: JSON.stringify(msg),
