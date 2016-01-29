@@ -78,6 +78,8 @@ function load() {
 }
 
 function setConfig(_config,type,muteLog) {
+    // require('../dnr').parseConfig(_config);
+
     var config = clone(_config);
     type = type||"full";
 
