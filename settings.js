@@ -19,16 +19,13 @@
 //var fs = require("fs");
 
 module.exports = {
-    // this device
-    deviceId: "1880",
-    
     // the tcp port that the Node-RED web server is listening on
-    uiPort: 1880,
+    uiPort: 1818,
 
     // By default, the Node-RED UI accepts connections on all IPv4 interfaces.
     // The following property can be used to listen on a specific interface. For
     // example, the following would only allow connections from the local machine.
-    //uiHost: "127.0.0.1",
+    uiHost: "127.0.0.1",
 
     // Retry time in milliseconds for MQTT connections
     mqttReconnectTime: 15000,
@@ -55,7 +52,7 @@ module.exports = {
 
     // By default, all user data is stored in the Node-RED install directory. To
     // use a different location, the following property can be used
-    //userDir: '/home/nol/.node-red/',
+    userDir: '/Users/namtrang/.dnr-editor',
 
     // Node-RED scans the `nodes` directory in the install directory to find nodes.
     // The following property can be used to specify an additional directory to scan.

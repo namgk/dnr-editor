@@ -31,6 +31,7 @@ function Flow(global,flow) {
     var statusNodeMap = {};
 
     this.start = function(diff) {
+        return;
         var node;
         var newNode;
         var id;
@@ -99,6 +100,7 @@ function Flow(global,flow) {
     }
 
     this.stop = function(stopList) {
+        return;
         return when.promise(function(resolve) {
             var i;
             if (stopList) {

@@ -78,8 +78,6 @@ function load() {
 }
 
 function setConfig(_config,type,muteLog) {
-    // require('../dnr').parseConfig(_config);
-
     var config = clone(_config);
     type = type||"full";
 
@@ -112,6 +110,7 @@ function setConfig(_config,type,muteLog) {
         });
     }
 
+    require('../dnr').publish();
     return configSavePromise
         .then(function() {
             activeConfig = config;
