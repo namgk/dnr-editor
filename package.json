@@ -1,12 +1,12 @@
 {
-    "name"         : "node-red",
+    "name"         : "dnr-editor",
     "version"      : "0.13.1",
-    "description"  : "A visual tool for wiring the Internet of Things",
-    "homepage"     : "http://nodered.org",
+    "description"  : "Flows editor for Distributed Node-RED",
+    "homepage"     : "https://github.com/namgk/dnr-editor/blob/master/README.md",
     "license"      : "Apache-2.0",
     "repository"   : {
         "type":"git",
-        "url":"https://github.com/node-red/node-red.git"
+        "url":"https://github.com/namgk/dnr-editor.git"
     },
     "main"         : "red/red.js",
     "scripts"      : {
@@ -19,7 +19,8 @@
     },
     "contributors": [
         {"name": "Nick O'Leary"},
-        {"name": "Dave Conway-Jones"}
+        {"name": "Dave Conway-Jones"},
+        {"name": "Nam Giang"}
     ],
     "keywords": [
         "editor", "messaging", "iot", "ibm", "flow"
