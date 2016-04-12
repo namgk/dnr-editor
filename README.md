@@ -67,4 +67,4 @@ DNR is an extension of Node-RED by Mike Blackstock [@mblackstock](http://twitter
 
 ## Copyright and license
 
-Copyright 2013, 2014 IBM Corp. under [the Apache 2.0 license](LICENSE).
+Copyright 2013, 2016 IBM Corp. under [the Apache 2.0 license](LICENSE).

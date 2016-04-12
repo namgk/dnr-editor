@@ -32,6 +32,7 @@
             "export": "Export",
             "clipboard": "Clipboard",
             "library": "Library",
+            "examples": "Examples",
             "subflows": "Subflows",
             "createSubflow": "Create Subflow",
             "selectionToSubflow": "Selection to Subflow",

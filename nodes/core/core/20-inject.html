@@ -142,13 +142,7 @@
     .inject-time-times {
         width: 90px;
     }
-    .inject-time-row > .ui-spinner {
-        height: 28px;
-        margin: 3px 0;
-        border-color: rgb(204, 204, 204);
-    }
     #inject-time-time {
-        margin-top: 3px;
         width: 75px;
     }
     .inject-time-count {
@@ -157,12 +151,15 @@
 </style>
 <script type="text/x-red" data-help-name="inject">
     <p>Pressing the button on the left side of the node allows a message on a topic
-       to be injected into the flow. This is mainly for test purposes.</p>
+       to be injected into the flow.</p>
     <p>The payload defaults to the current time in millisecs since 1970, but can
-       also be set to a String or left blank.</p>
+       also be set to various other javascript types.</p>
     <p>The repeat function allows the payload to be sent on the required schedule.</p>
-    <p>The <i>Fire once at start</i> option actually waits a short interval before firing
+    <p>The <i>Inject once at start</i> option actually waits a short interval before firing
        to give other nodes a chance to instantiate properly.</p>
+    <p>The <i>Flow</i> and <i>Global</i> options allow one to inject a flow or global
+        context value.
+    </p>
     <p><b>Note: </b>"Interval between times" and "at a specific time" uses cron.
        This means that 20 minutes will be at the next hour, 20 minutes past and
        40 minutes past - not in 20 minutes time. If you want every 20 minutes
@@ -178,7 +175,22 @@
         defaults: {
             name: {value:""},
             topic: {value:""},
-            payload: {value:""},
+            payload: {value:"", validate:function(v) {
+                var ptype = $("#node-input-payloadType").val() || this.payloadType;
+                if (ptype === 'json') {
+                    try {
+                        JSON.parse(v);
+                        return true;
+                    } catch(err) {
+                        return false;
+                    }
+                } else if (ptype === 'flow' || ptype === 'global' ) {
+                    return /^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]+)*/i.test(v);
+                } else if (ptype === 'num') {
+                    return /^[+-]?[0-9]*\.?[0-9]*([eE][-+]?[0-9]+)?$/.test(v);
+                }
+                return true;
+            }},
             payloadType: {value:"date"},
             repeat: {value:""},
             crontab: {value:""},

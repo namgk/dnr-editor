@@ -351,7 +351,11 @@ RED.view = (function() {
                     }
 
                     if (nn._def.onadd) {
-                        nn._def.onadd.call(nn);
+                        try {
+                            nn._def.onadd.call(nn);
+                        } catch(err) {
+                            console.log("onadd:",err);
+                        }
                     }
                 } else {
                     var subflow = RED.nodes.subflow(m[1]);
@@ -397,7 +401,7 @@ RED.view = (function() {
 
                 var spliceLink = $(ui.helper).data('splice');
                 if (spliceLink) {
-                    // TODO: DRY - canvasMouseUp
+                    // TODO: DRY - droppable/nodeMouseDown/canvasMouseUp
                     RED.nodes.removeLink(spliceLink);
                     var link1 = {
                         source:spliceLink.source,
@@ -644,7 +648,7 @@ RED.view = (function() {
                     }
                 }
             }
-            if (mouse_mode == RED.state.MOVING_ACTIVE && moving_set.length === 1) {
+            if ((mouse_mode == RED.state.MOVING_ACTIVE || mouse_mode == RED.state.IMPORT_DRAGGING) && moving_set.length === 1) {
                 node = moving_set[0];
                 if (spliceActive) {
                     if (!spliceTimer) {
@@ -767,7 +771,7 @@ RED.view = (function() {
                 }
                 historyEvent = {t:'move',nodes:ns,dirty:RED.nodes.dirty()};
                 if (activeSpliceLink) {
-                    // TODO: DRY - droppable
+                    // TODO: DRY - droppable/nodeMouseDown/canvasMouseUp
                     var spliceLink = d3.select(activeSpliceLink).data()[0];
                     RED.nodes.removeLink(spliceLink);
                     var link1 = {
@@ -1182,6 +1186,29 @@ RED.view = (function() {
         //RED.touch.radialMenu.show(d3.select(this),pos);
         if (mouse_mode == RED.state.IMPORT_DRAGGING) {
             RED.keyboard.remove(/* ESCAPE */ 27);
+
+            if (activeSpliceLink) {
+                // TODO: DRY - droppable/nodeMouseDown/canvasMouseUp
+                var spliceLink = d3.select(activeSpliceLink).data()[0];
+                RED.nodes.removeLink(spliceLink);
+                var link1 = {
+                    source:spliceLink.source,
+                    sourcePort:spliceLink.sourcePort,
+                    target: moving_set[0].n
+                };
+                var link2 = {
+                    source:moving_set[0].n,
+                    sourcePort:0,
+                    target: spliceLink.target
+                };
+                RED.nodes.addLink(link1);
+                RED.nodes.addLink(link2);
+                var historyEvent = RED.history.peek();
+                historyEvent.links = [link1,link2];
+                historyEvent.removedLinks = [spliceLink];
+                updateActiveNodes();
+            }
+
             updateSelection();
             RED.nodes.dirty(true);
             redraw();
@@ -1254,7 +1281,11 @@ RED.view = (function() {
                 d.dirty = true;
             }
             if (d._def.button.onclick) {
-                d._def.button.onclick.call(d);
+                try {
+                    d._def.button.onclick.call(d);
+                } catch(err) {
+                    console.log("Definition error: "+d.type+".onclick",err);
+                }
             }
             if (d.dirty) {
                 redraw();
@@ -1409,7 +1440,12 @@ RED.view = (function() {
                     var node = d3.select(this);
                     node.attr("id",d.id);
                     var l = d._def.label;
-                    l = (typeof l === "function" ? l.call(d) : l)||"";
+                    try {
+                        l = (typeof l === "function" ? l.call(d) : l)||"";
+                    } catch(err) {
+                        console.log("Definition error: "+d.type+".label",err);
+                        l = d.type;
+                    }
                     d.w = Math.max(node_width,gridSize*(Math.ceil((calculateTextWidth(l, "node_label", 50)+(d._def.inputs>0?7:0))/gridSize)) );
                     d.h = Math.max(node_height,(d.outputs||0) * 15);
 
@@ -1594,7 +1630,12 @@ RED.view = (function() {
                         //if (d.x < -50) deleteSelection();  // Delete nodes if dragged back to palette
                         if (d.resize) {
                             var l = d._def.label;
-                            l = (typeof l === "function" ? l.call(d) : l)||"";
+                            try {
+                                l = (typeof l === "function" ? l.call(d) : l)||"";
+                            } catch(err) {
+                                console.log("Definition error: "+d.type+".label",err);
+                                l = d.type;
+                            }
                             var ow = d.w;
                             d.w = Math.max(node_width,gridSize*(Math.ceil((calculateTextWidth(l, "node_label", 50)+(d._def.inputs>0?7:0))/gridSize)) );
                             d.h = Math.max(node_height,(d.outputs||0) * 15);
@@ -1662,20 +1703,33 @@ RED.view = (function() {
                                 });
                             }
                             thisNode.selectAll('text.node_label').text(function(d,i){
+                                    var l = "";
                                     if (d._def.label) {
-                                        if (typeof d._def.label == "function") {
-                                            return d._def.label.call(d);
-                                        } else {
-                                            return d._def.label;
+                                        l = d._def.label;
+                                        try {
+                                            l = (typeof l === "function" ? l.call(d) : l)||"";
+                                        } catch(err) {
+                                            console.log("Definition error: "+d.type+".label",err);
+                                            l = d.type;
                                         }
                                     }
-                                    return "";
+                                    return l;
                                 })
                                 .attr('y', function(d){return (d.h/2)-1;})
                                 .attr('class',function(d){
+                                    var s = "";
+                                    if (d._def.labelStyle) {
+                                        s = d._def.labelStyle;
+                                        try {
+                                            s = (typeof s === "function" ? s.call(d) : s)||"";
+                                        } catch(err) {
+                                            console.log("Definition error: "+d.type+".labelStyle",err);
+                                            s = "";
+                                        }
+                                        s = " "+s;
+                                    }
                                     return 'node_label'+
-                                    (d._def.align?' node_label_'+d._def.align:'')+
-                                    (d._def.labelStyle?' '+(typeof d._def.labelStyle == "function" ? d._def.labelStyle.call(d):d._def.labelStyle):'') ;
+                                    (d._def.align?' node_label_'+d._def.align:'')+s;
                             });
 
                             if (d._def.icon) {
@@ -1683,7 +1737,12 @@ RED.view = (function() {
                                 var current_url = icon.attr("xlink:href");
                                 var icon_url;
                                 if (typeof d._def.icon == "function") {
-                                    icon_url = d._def.icon.call(d);
+                                    try {
+                                        icon_url = d._def.icon.call(d);
+                                    } catch(err) {
+                                        console.log("icon",err);
+                                        icon_url = "arrow-in.png";
+                                    }
                                 } else {
                                     icon_url = d._def.icon;
                                 }
@@ -1747,7 +1806,12 @@ RED.view = (function() {
                             thisNode.selectAll('text.node_badge_label').text(function(d,i) {
                                 if (d._def.badge) {
                                     if (typeof d._def.badge == "function") {
-                                        return d._def.badge.call(d);
+                                        try {
+                                            return d._def.badge.call(d);
+                                        } catch(err) {
+                                            console.log("Definition error: "+d.type+".badge",err);
+                                            return "";
+                                        }
                                     } else {
                                         return d._def.badge;
                                     }
@@ -1957,6 +2021,12 @@ RED.view = (function() {
                     }
                     if (!touchImport) {
                         mouse_mode = RED.state.IMPORT_DRAGGING;
+                        spliceActive = false;
+                        if (new_ms.length === 1) {
+                            node = new_ms[0];
+                            spliceActive = node.n._def.inputs > 0 &&
+                                           node.n._def.outputs > 0;
+                        }
                     }
 
                     RED.keyboard.add(/* ESCAPE */ 27,function(){
