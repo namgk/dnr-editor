@@ -107,6 +107,16 @@
     </form>
 </div>
 
+
+<div id="node-dialog-flow-metadata" class="hide">
+    <div class="form-row">
+        <label for="flow-id" ><i class="fa fa-cloud"></i>Flow Id:</label>
+        <input type="text" id="flow-id" readonly>
+        <label for="flow-trackers" ><i class="fa fa-cloud"></i>Trackers:</label>
+        <input type="textarea" id="flow-trackers" row="5" placeholder="http://example.com">
+    </div>
+</div>
+
 <div id="node-dialog-new-constraints" class="hide">
     <div class="form-row">
         <label for="constraint-id" ><i class="fa fa-cloud"></i>Constraint Id:</label>

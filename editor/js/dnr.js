@@ -44,6 +44,24 @@
         }
       });
 
+      $("#node-dialog-flow-metadata").dialog({
+        title:"Configure metadata of this flow",
+        autoOpen: false,
+        width: 500,
+        open: function(e) {
+            RED.keyboard.disable();
+        },
+        close: function(e) {
+            RED.keyboard.enable();
+        },
+        buttons: 
+        {
+            "Create": newFlowMetadataDialog,
+            Cancel: function() {
+                $( this ).dialog( "close" );
+            }
+        }
+      });
 
       RED.menu.init({id:"btn-constraints-options",
         options: []
@@ -57,12 +75,54 @@
           onselect:function(s) { toggleConstraints(s)}
         };
 
-      RED.menu.addItem("btn-sidemenu", constraintMenu);
+      RED.menu.addItem("menu-item-view-menu", constraintMenu);
+
+      var flowMenu = {
+          id:"menu-item-flows",
+          label:"Metadata",
+          onselect:function(s) { showFlowMetadata(s)}
+        };
+
+      RED.menu.addItem("menu-item-workspace", flowMenu);
     }
 
     function toggleConstraints(checked) {
-      console.log(checked);
       RED.view.constraints(checked);
+    }
+
+    function showFlowMetadata(){
+      var thisFlowId = RED.workspaces.active();
+
+      $( "#flow-id" ).val(thisFlowId);
+      $( "#flow-trackers" ).val('');
+
+      RED.nodes.eachWorkspace(function(flow){
+        if (flow.id === thisFlowId && flow.metadata)
+          $( "#flow-trackers" ).val(flow.metadata.trackers.toString());
+      });
+
+      $( "#node-dialog-flow-metadata" ).dialog( "open" ); 
+    }
+
+
+    function newFlowMetadataDialog(){
+      var flowId = $( "#flow-id" ).val();
+      var trackers = $( "#flow-trackers" ).val().split(',');
+
+      // parsing trackers into array of http://host:port
+      
+      var flowMetadata = {};
+
+      if (trackers){
+        flowMetadata['trackers'] = trackers;
+        RED.nodes.eachWorkspace(function(flow){
+          console.log(flow);
+          if (flow.id === flowId)
+            flow['metadata'] = flowMetadata;
+        });
+      }
+
+      $( this ).dialog( "close" );
     }
 
     function newConstraintDialog(){
