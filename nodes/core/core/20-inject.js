@@ -46,12 +46,12 @@ module.exports = function(RED) {
         }
 
         if (this.once) {
-            setTimeout( function(){ node.emit("input",{}); }, 100);
+            setTimeout( function() { node.emit("input",{}); }, 100 );
         }
 
         this.on("input",function(msg) {
             try {
-                msg = {topic:this.topic};
+                msg.topic = this.topic;
                 if ( (this.payloadType == null && this.payload === "") || this.payloadType === "date") {
                     msg.payload = Date.now();
                 } else if (this.payloadType == null) {

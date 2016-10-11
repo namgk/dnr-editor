@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 IBM Corp.
+ * Copyright 2015, 2016 IBM Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,8 @@ var clone = require("clone");
 var defaultContext = {
     page: {
         title: "Node-RED",
-        favicon: "favicon.ico"
+        favicon: "favicon.ico",
+        tabicon: "red/images/node-red-icon-black.svg"
     },
     header: {
         title: "Node-RED",
@@ -62,7 +63,6 @@ module.exports = {
         }
         themeSettings = null;
         theme = settings.editorTheme;
-
     },
 
     app: function() {
@@ -92,6 +92,13 @@ module.exports = {
                 url = serveFile(themeApp,"/favicon/",theme.page.favicon)
                 if (url) {
                     themeContext.page.favicon = url;
+                }
+            }
+
+            if (theme.page.tabicon) {
+                url = serveFile(themeApp,"/tabicon/",theme.page.tabicon)
+                if (url) {
+                    themeContext.page.tabicon = url;
                 }
             }
 
@@ -154,6 +161,9 @@ module.exports = {
             themeSettings.menu = theme.menu;
         }
 
+        if (theme.hasOwnProperty("palette")) {
+            themeSettings.palette = theme.palette;
+        }
         return themeApp;
     },
     context: function() {

@@ -33,15 +33,17 @@ describe("red/settings", function() {
         }
         settings.init(userSettings);
 
-        settings.available().should.be.false;
+        settings.available().should.be.false();
 
         settings.a.should.equal(123);
         settings.b.should.equal("test");
-        settings.c.should.be.an.Array.with.lengthOf(3);
+        settings.c.should.be.an.Array();
+        settings.c.should.have.lengthOf(3);
 
         settings.get("a").should.equal(123);
         settings.get("b").should.equal("test");
-        settings.get("c").should.be.an.Array.with.lengthOf(3);
+        settings.get("c").should.be.an.Array();
+        settings.get("c").should.have.lengthOf(3);
 
         /*jshint immed: false */
         (function() {
@@ -49,7 +51,8 @@ describe("red/settings", function() {
         }).should.throw();
 
         settings.c.push(5);
-        settings.c.should.be.an.Array.with.lengthOf(4);
+        settings.c.should.be.an.Array();
+        settings.c.should.have.lengthOf(4);
 
         /*jshint immed: false */
         (function() {
@@ -93,14 +96,14 @@ describe("red/settings", function() {
         }
         settings.init(userSettings);
 
-        settings.available().should.be.false;
+        settings.available().should.be.false();
 
         /*jshint immed: false */
         (function() {
             settings.get("unknown");
         }).should.throw();
         settings.load(storage).then(function() {
-            settings.available().should.be.true;
+            settings.available().should.be.true();
             settings.get("globalA").should.equal(789);
             settings.set("globalA","abc").then(function() {
                 savedSettings.globalA.should.equal("abc");
@@ -125,11 +128,12 @@ describe("red/settings", function() {
         }
         settings.init(userSettings);
 
-        settings.available().should.be.false;
+        settings.available().should.be.false();
 
         settings.should.have.property("a",123);
         settings.should.have.property("b","test");
-        settings.c.should.be.an.Array.with.lengthOf(3);
+        settings.c.should.be.an.Array();
+        settings.c.should.have.lengthOf(3);
 
         settings.reset();
 

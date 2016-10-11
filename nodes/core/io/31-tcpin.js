@@ -393,17 +393,34 @@ module.exports = function(RED) {
         this.splitc = n.splitc;
 
         if (this.out != "char") { this.splitc = Number(this.splitc); }
-        else { this.splitc = this.splitc.replace("\\n",0x0A).replace("\\r",0x0D).replace("\\t",0x09).replace("\\e",0x1B).replace("\\f",0x0C).replace("\\0",0x00); } // jshint ignore:line
+        else {
+            if (this.splitc[0] == '\\') {
+                this.splitc = parseInt(this.splitc.replace("\\n",0x0A).replace("\\r",0x0D).replace("\\t",0x09).replace("\\e",0x1B).replace("\\f",0x0C).replace("\\0",0x00));
+            } // jshint ignore:line
+            if (typeof this.splitc == "string") {
+                if (this.splitc.substr(0,2) == "0x") {
+                    this.splitc = parseInt(this.splitc);
+                }
+                else {
+                    this.splitc = this.splitc.charCodeAt(0);
+                }
+            } // jshint ignore:line
+        }
 
         var buf;
-        if (this.out == "count") { buf = new Buffer(this.splitc); }
+        if (this.out == "count") {
+            if (this.splitc === 0) { buf = new Buffer(1); }
+            else { buf = new Buffer(this.splitc); }
+        }
         else { buf = new Buffer(65536); } // set it to 64k... hopefully big enough for most TCP packets.... but only hopefully
 
         this.connected = false;
         var node = this;
         var client;
+        var m;
 
         this.on("input", function(msg) {
+            m = msg;
             var i = 0;
             if ((!Buffer.isBuffer(msg.payload)) && (typeof msg.payload !== "string")) {
                 msg.payload = msg.payload.toString();
@@ -428,8 +445,8 @@ module.exports = function(RED) {
 
                 client.on('data', function(data) {
                     if (node.out == "sit") { // if we are staying connected just send the buffer
-                        msg.payload = data;
-                        node.send(msg);
+                        m.payload = data;
+                        node.send(m);
                     }
                     else if (node.splitc === 0) {
                         msg.payload = data;
@@ -437,7 +454,7 @@ module.exports = function(RED) {
                     }
                     else {
                         for (var j = 0; j < data.length; j++ ) {
-                            if (node.out === "time")  {
+                            if (node.out === "time") {
                                 // do the timer thing
                                 if (node.tout) {
                                     i += 1;
@@ -523,7 +540,6 @@ module.exports = function(RED) {
         this.on("close", function(done) {
             node.done = done;
             if (client) {
-                buf = null;
                 client.destroy();
             }
             node.status({});

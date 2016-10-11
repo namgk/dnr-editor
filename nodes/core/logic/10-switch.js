@@ -44,21 +44,27 @@ module.exports = function(RED) {
         for (var i=0; i<this.rules.length; i+=1) {
             var rule = this.rules[i];
             if (!rule.vt) {
-                rule.vt = 'str';
+                if (!isNaN(Number(rule.v))) {
+                    rule.vt = 'num';
+                } else {
+                    rule.vt = 'str';
+                }
             }
-            if (rule.vt === 'str' || rule.vt === 'num') {
+            if (rule.vt === 'num') {
                 if (!isNaN(Number(rule.v))) {
                     rule.v = Number(rule.v);
                 }
             }
             if (typeof rule.v2 !== 'undefined') {
                 if (!rule.v2t) {
-                    rule.v2t = 'str';
-                }
-                if (rule.v2t === 'str' || rule.v2t === 'num') {
                     if (!isNaN(Number(rule.v2))) {
-                        rule.v2 = Number(rule.v2);
+                        rule.v2t = 'num';
+                    } else {
+                        rule.v2t = 'str';
                     }
+                }
+                if (rule.v2t === 'num') {
+                    rule.v2 = Number(rule.v2);
                 }
             }
         }
@@ -83,7 +89,6 @@ module.exports = function(RED) {
                     } else if (typeof v2 !== 'undefined') {
                         v2 = RED.util.evaluateNodeProperty(rule.v2,rule.v2t,node,msg);
                     }
-                    node.previousValue = prop;
                     if (rule.t == "else") { test = elseflag; elseflag = true; }
                     if (operators[rule.t](test,v1,v2,rule.case)) {
                         onward.push(msg);
@@ -93,6 +98,7 @@ module.exports = function(RED) {
                         onward.push(null);
                     }
                 }
+                node.previousValue = prop;
                 this.send(onward);
             } catch(err) {
                 node.warn(err);

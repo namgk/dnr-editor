@@ -34,11 +34,12 @@ describe("flows api", function() {
         app.post("/flows",flows.post);
     });
 
-    it('returns flow', function(done) {
+    it('returns flow - v1', function(done) {
         flows.init({
+            settings: {},
             log:{warn:function(){},_:function(){},audit:function(){}},
             nodes:{
-                getFlows: function() { return [1,2,3]; }
+                getFlows: function() { return {rev:"123",flows:[1,2,3]}; }
             }
         });
         request(app)
@@ -49,12 +50,60 @@ describe("flows api", function() {
                 if (err) {
                     return done(err);
                 }
-                res.body.should.be.an.Array.and.have.lengthOf(3);
-                done();
+                try {
+                    res.body.should.have.lengthOf(3);
+                    done();
+                } catch(e) {
+                    return done(e);
+                }
             });
     });
-
-    it('sets flows - default', function(done) {
+    it('returns flow - v2', function(done) {
+        flows.init({
+            settings: {},
+            log:{warn:function(){},_:function(){},audit:function(){}},
+            nodes:{
+                getFlows: function() { return {rev:"123",flows:[1,2,3]}; }
+            }
+        });
+        request(app)
+            .get('/flows')
+            .set('Accept', 'application/json')
+            .set('Node-RED-API-Version','v2')
+            .expect(200)
+            .end(function(err,res) {
+                if (err) {
+                    return done(err);
+                }
+                try {
+                    res.body.should.have.a.property('rev','123');
+                    res.body.should.have.a.property('flows');
+                    res.body.flows.should.have.lengthOf(3);
+                    done();
+                } catch(e) {
+                    return done(e);
+                }
+            });
+    });
+    it('returns flow - bad version', function(done) {
+        request(app)
+            .get('/flows')
+            .set('Accept', 'application/json')
+            .set('Node-RED-API-Version','xxx')
+            .expect(400)
+            .end(function(err,res) {
+                if (err) {
+                    return done(err);
+                }
+                try {
+                    res.body.should.have.a.property('error','bad_api_version');
+                    done();
+                } catch(e) {
+                    return done(e);
+                }
+            });
+    });
+    it('sets flows - default - v1', function(done) {
         var setFlows = sinon.spy(function() { return when.resolve();});
         flows.init({
             log:{warn:function(){},_:function(){},audit:function(){}},
@@ -70,12 +119,12 @@ describe("flows api", function() {
                 if (err) {
                     return done(err);
                 }
-                setFlows.calledOnce.should.be.true;
+                setFlows.calledOnce.should.be.true();
                 setFlows.lastCall.args[1].should.eql('full');
                 done();
             });
     });
-    it('sets flows - non-default', function(done) {
+    it('sets flows - non-default - v1', function(done) {
         var setFlows = sinon.spy(function() { return when.resolve();});
         flows.init({
             log:{warn:function(){},_:function(){},audit:function(){}},
@@ -92,12 +141,102 @@ describe("flows api", function() {
                 if (err) {
                     return done(err);
                 }
-                setFlows.calledOnce.should.be.true;
+                setFlows.calledOnce.should.be.true();
                 setFlows.lastCall.args[1].should.eql('nodes');
                 done();
             });
     });
 
+    it('set flows - rejects mismatched revision - v2', function(done) {
+        var setFlows = sinon.spy(function() { return when.resolve();});
+        var getFlows = sinon.spy(function() { return {rev:123,flows:[1,2,3]}});
+        flows.init({
+            log:{warn:function(){},_:function(){},audit:function(){}},
+            nodes:{
+                setFlows: setFlows,
+                getFlows: getFlows
+            }
+        });
+        request(app)
+            .post('/flows')
+            .set('Accept', 'application/json')
+            .set('Node-RED-API-Version','v2')
+            .send({rev:456,flows:[4,5,6]})
+            .expect(409)
+            .end(function(err,res) {
+                if (err) {
+                    return done(err);
+                }
+                res.body.should.have.property("error","version_mismatch");
+                done();
+            });
+    });
+    it('set flows - rev provided - v2', function(done) {
+        var setFlows = sinon.spy(function() { return when.resolve(456);});
+        var getFlows = sinon.spy(function() { return {rev:123,flows:[1,2,3]}});
+        flows.init({
+            log:{warn:function(){},_:function(){},audit:function(){}},
+            nodes:{
+                setFlows: setFlows,
+                getFlows: getFlows
+            }
+        });
+        request(app)
+            .post('/flows')
+            .set('Accept', 'application/json')
+            .set('Node-RED-API-Version','v2')
+            .send({rev:123,flows:[4,5,6]})
+            .expect(200)
+            .end(function(err,res) {
+                if (err) {
+                    return done(err);
+                }
+                res.body.should.have.property("rev",456);
+                done();
+            });
+    });
+    it('set flows - no rev provided - v2', function(done) {
+        var setFlows = sinon.spy(function() { return when.resolve(456);});
+        var getFlows = sinon.spy(function() { return {rev:123,flows:[1,2,3]}});
+        flows.init({
+            log:{warn:function(){},_:function(){},audit:function(){}},
+            nodes:{
+                setFlows: setFlows,
+                getFlows: getFlows
+            }
+        });
+        request(app)
+            .post('/flows')
+            .set('Accept', 'application/json')
+            .set('Node-RED-API-Version','v2')
+            .send({flows:[4,5,6]})
+            .expect(200)
+            .end(function(err,res) {
+                if (err) {
+                    return done(err);
+                }
+                res.body.should.have.property("rev",456);
+                done();
+            });
+    });
+    it('sets flow - bad version', function(done) {
+        request(app)
+            .post('/flows')
+            .set('Accept', 'application/json')
+            .set('Node-RED-API-Version','xxx')
+            .expect(400)
+            .end(function(err,res) {
+                if (err) {
+                    return done(err);
+                }
+                try {
+                    res.body.should.have.a.property('error','bad_api_version');
+                    done();
+                } catch(e) {
+                    return done(e);
+                }
+            });
+    });
     it('reloads flows', function(done) {
         var loadFlows = sinon.spy(function() { return when.resolve(); });
         flows.init({
@@ -115,7 +254,7 @@ describe("flows api", function() {
                 if (err) {
                     return done(err);
                 }
-                loadFlows.called.should.be.true;
+                loadFlows.called.should.be.true();
                 done();
             });
     });

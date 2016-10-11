@@ -30,10 +30,16 @@ module.exports = function(RED) {
     }
 
     try {
-        fs.statSync("/usr/share/doc/python-rpi.gpio");
+        fs.statSync("/usr/share/doc/python-rpi.gpio"); // test on Raspbian
+        // /usr/lib/python2.7/dist-packages/RPi/GPIO
     } catch(err) {
-        RED.log.warn(RED._("rpi-gpio.errors.libnotfound"));
-        throw "Warning : "+RED._("rpi-gpio.errors.libnotfound");
+        try {
+            fs.statSync("/usr/lib/python2.7/site-packages/RPi/GPIO"); // test on Arch
+        }
+        catch(err) {
+            RED.log.warn(RED._("rpi-gpio.errors.libnotfound"));
+            throw "Warning : "+RED._("rpi-gpio.errors.libnotfound");
+        }
     }
 
     if ( !(1 & parseInt((fs.statSync(gpioCommand).mode & parseInt("777", 8)).toString(8)[0]) )) {
@@ -160,11 +166,12 @@ module.exports = function(RED) {
         if (node.pin !== undefined) {
             if (node.set && (node.out === "out")) {
                 node.child = spawn(gpioCommand, [node.out,node.pin,node.level]);
+                node.status({fill:"green",shape:"dot",text:node.level});
             } else {
                 node.child = spawn(gpioCommand, [node.out,node.pin]);
+                node.status({fill:"green",shape:"dot",text:"common.status.ok"});
             }
             node.running = true;
-            node.status({fill:"green",shape:"dot",text:"common.status.ok"});
 
             node.on("input", inputlistener);
 

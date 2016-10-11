@@ -85,13 +85,13 @@ module.exports = function(RED) {
         }
 
         // Create the URL to pass in to the MQTT.js library
-        if (this.brokerurl == "") {
+        if (this.brokerurl === "") {
             if (this.usetls) {
                 this.brokerurl="mqtts://";
             } else {
                 this.brokerurl="mqtt://";
             }
-            if (this.broker != "") {
+            if (this.broker !== "") {
                 this.brokerurl = this.brokerurl+this.broker+":"+this.port;
             } else {
                 this.brokerurl = this.brokerurl+"localhost:1883";
@@ -114,8 +114,18 @@ module.exports = function(RED) {
             this.options.protocolId = 'MQIsdp';
             this.options.protocolVersion = 3;
         }
-
-        this.options.rejectUnauthorized = (this.verifyservercert == "true" || this.verifyservercert === true)
+        if (this.usetls && n.tls) {
+            var tlsNode = RED.nodes.getNode(n.tls);
+            if (tlsNode) {
+                tlsNode.addTLSOptions(this.options);
+            }
+        }
+        // If there's no rejectUnauthorized already, then this could be an
+        // old config where this option was provided on the broker node and
+        // not the tls node
+        if (typeof this.options.rejectUnauthorized === 'undefined') {
+            this.options.rejectUnauthorized = (this.verifyservercert == "true" || this.verifyservercert === true);
+        }
 
         if (n.willTopic) {
             this.options.will = {
@@ -143,8 +153,11 @@ module.exports = function(RED) {
                 return done();
             }
             if (Object.keys(node.users).length === 0) {
-                if (node.client) {
+                if (node.client && node.client.connected) {
                     return node.client.end(done);
+                } else {
+                    node.client.end();
+                    return done();
                 }
             }
             done();
@@ -162,7 +175,7 @@ module.exports = function(RED) {
                     node.log(RED._("mqtt.state.connected",{broker:(node.clientid?node.clientid+"@":"")+node.brokerurl}));
                     for (var id in node.users) {
                         if (node.users.hasOwnProperty(id)) {
-                            node.users[id].status({fill:"green",shape:"dot",text:"common.status.connected"});
+                            node.users[id].status({fill:"green",shape:"dot",text:"node-red:common.status.connected"});
                         }
                     }
                     // Remove any existing listeners before resubscribing to avoid duplicates in the event of a re-connection
@@ -170,14 +183,18 @@ module.exports = function(RED) {
 
                     // Re-subscribe to stored topics
                     for (var s in node.subscriptions) {
-                        var topic = s;
-                        var qos = 0;
-                        for (var r in node.subscriptions[s]) {
-                            qos = Math.max(qos,node.subscriptions[s][r].qos);
-                            node.client.on('message',node.subscriptions[s][r].handler);
+                        if (node.subscriptions.hasOwnProperty(s)) {
+                            var topic = s;
+                            var qos = 0;
+                            for (var r in node.subscriptions[s]) {
+                                if (node.subscriptions[s].hasOwnProperty(r)) {
+                                    qos = Math.max(qos,node.subscriptions[s][r].qos);
+                                    node.client.on('message',node.subscriptions[s][r].handler);
+                                }
+                            }
+                            var options = {qos: qos};
+                            node.client.subscribe(topic, options);
                         }
-                        var options = {qos: qos};
-                        node.client.subscribe(topic, options);
                     }
 
                     // Send any birth message
@@ -188,7 +205,7 @@ module.exports = function(RED) {
                 node.client.on("reconnect", function() {
                     for (var id in node.users) {
                         if (node.users.hasOwnProperty(id)) {
-                            node.users[id].status({fill:"yellow",shape:"ring",text:"common.status.connecting"});
+                            node.users[id].status({fill:"yellow",shape:"ring",text:"node-red:common.status.connecting"});
                         }
                     }
                 })
@@ -199,7 +216,7 @@ module.exports = function(RED) {
                         node.log(RED._("mqtt.state.disconnected",{broker:(node.clientid?node.clientid+"@":"")+node.brokerurl}));
                         for (var id in node.users) {
                             if (node.users.hasOwnProperty(id)) {
-                                node.users[id].status({fill:"red",shape:"ring",text:"common.status.disconnected"});
+                                node.users[id].status({fill:"red",shape:"ring",text:"node-red:common.status.disconnected"});
                             }
                         }
                     } else if (node.connecting) {
@@ -247,7 +264,7 @@ module.exports = function(RED) {
                     node.client.removeListener('message',sub[ref].handler);
                     delete sub[ref];
                 }
-                if (Object.keys(sub).length == 0) {
+                if (Object.keys(sub).length === 0) {
                     delete node.subscriptions[topic];
                     if (node.connected){
                         node.client.unsubscribe(topic);
@@ -281,6 +298,9 @@ module.exports = function(RED) {
                     done();
                 });
                 this.client.end();
+            } else if (this.connecting) {
+                node.client.end();
+                done();
             } else {
                 done();
             }
@@ -298,6 +318,10 @@ module.exports = function(RED) {
     function MQTTInNode(n) {
         RED.nodes.createNode(this,n);
         this.topic = n.topic;
+        this.qos = parseInt(n.qos);
+        if (isNaN(this.qos) || this.qos < 0 || this.qos > 2) {
+            this.qos = 2;
+        }
         this.broker = n.broker;
         this.brokerConn = RED.nodes.getNode(this.broker);
         if (!/^(#$|(\+|[^+#]*)(\/(\+|[^+#]*))*(\/(\+|#|[^+#]*))?$)/.test(this.topic)) {
@@ -305,10 +329,10 @@ module.exports = function(RED) {
         }
         var node = this;
         if (this.brokerConn) {
-            this.status({fill:"red",shape:"ring",text:"common.status.disconnected"});
+            this.status({fill:"red",shape:"ring",text:"node-red:common.status.disconnected"});
             if (this.topic) {
                 node.brokerConn.register(this);
-                this.brokerConn.subscribe(this.topic,2,function(topic,payload,packet) {
+                this.brokerConn.subscribe(this.topic,this.qos,function(topic,payload,packet) {
                     if (isUtf8(payload)) { payload = payload.toString(); }
                     var msg = {topic:topic,payload:payload, qos: packet.qos, retain: packet.retain};
                     if ((node.brokerConn.broker === "localhost")||(node.brokerConn.broker === "127.0.0.1")) {
@@ -317,7 +341,7 @@ module.exports = function(RED) {
                     node.send(msg);
                 }, this.id);
                 if (this.brokerConn.connected) {
-                    node.status({fill:"green",shape:"dot",text:"common.status.connected"});
+                    node.status({fill:"green",shape:"dot",text:"node-red:common.status.connected"});
                 }
             }
             else {
@@ -345,7 +369,7 @@ module.exports = function(RED) {
         var node = this;
 
         if (this.brokerConn) {
-            this.status({fill:"red",shape:"ring",text:"common.status.disconnected"});
+            this.status({fill:"red",shape:"ring",text:"node-red:common.status.disconnected"});
             this.on("input",function(msg) {
                 if (msg.qos) {
                     msg.qos = parseInt(msg.qos);
@@ -367,7 +391,7 @@ module.exports = function(RED) {
                 }
             });
             if (this.brokerConn.connected) {
-                node.status({fill:"green",shape:"dot",text:"common.status.connected"});
+                node.status({fill:"green",shape:"dot",text:"node-red:common.status.connected"});
             }
             node.brokerConn.register(node);
             this.on('close', function(done) {

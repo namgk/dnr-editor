@@ -20,6 +20,7 @@ var util = require('util');
 var path = require('path');
 var passport = require('passport');
 var when = require('when');
+var cors = require('cors');
 
 var ui = require("./ui");
 var nodes = require("./nodes");
@@ -95,7 +96,7 @@ function init(_server,_runtime) {
             editorApp.use("/",ui.editorResources);
             adminApp.use(editorApp);
         }
-        var maxApiRequestSize = settings.apiMaxLength || '1mb';
+        var maxApiRequestSize = settings.apiMaxLength || '5mb';
         adminApp.use(bodyParser.json({limit:maxApiRequestSize}));
         adminApp.use(bodyParser.urlencoded({limit:maxApiRequestSize,extended:true}));
 
@@ -112,6 +113,10 @@ function init(_server,_runtime) {
             );
             adminApp.post("/auth/revoke",needsPermission(""),auth.revoke,errorHandler);
         }
+        if (settings.httpAdminCors) {
+            var corsHandler = cors(settings.httpAdminCors);
+            adminApp.use(corsHandler);
+        }
 
         // Flows
         adminApp.get("/flows",needsPermission("flows.read"),flows.get,errorHandler);
@@ -126,12 +131,12 @@ function init(_server,_runtime) {
         adminApp.get("/nodes",needsPermission("nodes.read"),nodes.getAll,errorHandler);
         adminApp.post("/nodes",needsPermission("nodes.write"),nodes.post,errorHandler);
 
-        adminApp.get("/nodes/:mod",needsPermission("nodes.read"),nodes.getModule,errorHandler);
-        adminApp.put("/nodes/:mod",needsPermission("nodes.write"),nodes.putModule,errorHandler);
-        adminApp.delete("/nodes/:mod",needsPermission("nodes.write"),nodes.delete,errorHandler);
+        adminApp.get(/\/nodes\/((@[^\/]+\/)?[^\/]+)$/,needsPermission("nodes.read"),nodes.getModule,errorHandler);
+        adminApp.put(/\/nodes\/((@[^\/]+\/)?[^\/]+)$/,needsPermission("nodes.write"),nodes.putModule,errorHandler);
+        adminApp.delete(/\/nodes\/((@[^\/]+\/)?[^\/]+)$/,needsPermission("nodes.write"),nodes.delete,errorHandler);
 
-        adminApp.get("/nodes/:mod/:set",needsPermission("nodes.read"),nodes.getSet,errorHandler);
-        adminApp.put("/nodes/:mod/:set",needsPermission("nodes.write"),nodes.putSet,errorHandler);
+        adminApp.get(/\/nodes\/((@[^\/]+\/)?[^\/]+)\/([^\/]+)$/,needsPermission("nodes.read"),nodes.getSet,errorHandler);
+        adminApp.put(/\/nodes\/((@[^\/]+\/)?[^\/]+)\/([^\/]+)$/,needsPermission("nodes.write"),nodes.putSet,errorHandler);
 
         adminApp.get('/credentials/:type/:id', needsPermission("credentials.read"),credentials.get,errorHandler);
 

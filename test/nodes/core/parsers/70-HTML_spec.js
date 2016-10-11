@@ -32,7 +32,7 @@ describe('html node', function() {
     });
 
     beforeEach(function() {
-        fs.existsSync(file).should.be.true;
+        fs.existsSync(file).should.be.true();
     });
 
     afterEach(function() {
@@ -48,7 +48,7 @@ describe('html node', function() {
         });
     });
 
-    it('should retrieve header contents as default', function(done) {
+    it('should retrieve header contents if asked to by msg.select', function(done) {
         fs.readFile(file, 'utf8', function(err, data) {
             var flow = [{id:"n1",type:"html",wires:[["n2"]],func:"return msg;"},
                         {id:"n2", type:"helper"}];
@@ -61,7 +61,7 @@ describe('html node', function() {
                     should.equal(msg.payload, 'This is a test page for node 70-HTML');
                     done();
                 });
-                n1.receive({payload:data,topic: "bar"});
+                n1.receive({payload:data,topic:"bar",select:"h1"});
             });
         });
     });
@@ -170,7 +170,7 @@ describe('html node', function() {
                     var n1 = helper.getNode("n1");
                     var n2 = helper.getNode("n2");
                     n1.receive({payload:null,topic: "bar"});
-                    helper.log().called.should.be.true;
+                    helper.log().called.should.be.true();
                     var logEvents = helper.log().args.filter(function(evt) {
                         return evt[0].type == "html";
                     });

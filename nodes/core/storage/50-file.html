@@ -17,7 +17,7 @@
 <script type="text/x-red" data-template-name="file">
     <div class="form-row node-input-filename">
          <label for="node-input-filename"><i class="fa fa-file"></i> <span data-i18n="file.label.filename"></span></label>
-         <input type="text" id="node-input-filename">
+         <div id="node-input-filename" contenteditable="true"></div>
     </div>
     <div class="form-row">
         <label for="node-input-overwriteFile"><i class="fa fa-random"></i> <span data-i18n="file.label.action"></span></label>
@@ -41,6 +41,7 @@
         <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
         <input type="text" id="node-input-name" data-i18n="[placeholder]common.label.name">
     </div>
+    <div class="form-tips"><span data-i18n="file.tip"></span></div>
 </script>
 
 <script type="text/x-red" data-help-name="file">
@@ -55,7 +56,7 @@
 <script type="text/x-red" data-template-name="file in">
     <div class="form-row">
          <label for="node-input-filename"><i class="fa fa-file"></i> <span data-i18n="file.label.filename"></span></label>
-         <input type="text" id="node-input-filename" data-i18n="[placeholder]file.label.filename">
+         <div id="node-input-filename" contenteditable="true" data-i18n="[placeholder]file.label.filename"></div>
     </div>
     <div class="form-row">
         <label for="node-input-format"><i class="fa fa-sign-out"></i> <span data-i18n="file.label.outputas"></span></label>
@@ -82,7 +83,7 @@
         category: 'storage-output',
         defaults: {
             name: {value:""},
-            filename: {value:""},
+            filename: {value:"",format:"filepath"},
             appendNewline: {value:true},
             createDir: {value:false},
             overwriteFile: {value:"false"}
@@ -114,7 +115,7 @@
         category: 'storage-input',
         defaults: {
             name: {value:""},
-            filename: {value:""},
+            filename: {value:"",format:"filepath"},
             format: {value:"utf8"},
         },
         color:"BurlyWood",

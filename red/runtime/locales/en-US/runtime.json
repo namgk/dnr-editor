@@ -13,6 +13,7 @@
         "errors_plural": "Failed to register __count__ node types",
         "errors-help": "Run with -v for details",
         "missing-modules": "Missing node modules:",
+        "node-version-mismatch": "Node module cannot be loaded on this version. Requires: __version__ ",
         "removing-modules": "Removing modules from config",
         "added-types": "Added node types:",
         "removed-types": "Removed node types:",
@@ -71,6 +72,7 @@
     "nodes": {
         "credentials": {
             "error":"Error loading credentials: __message__",
+            "error-saving":"Error saving credentials: __message__",
             "not-registered": "Credential type '__type__' is not registered"
         },
         "flows": {
@@ -120,12 +122,12 @@
         },
         "localfilesystem": {
             "user-dir": "User directory : __path__",
-            "flows-file": "Flows file : __path__",
-            "create": "Creating new flow file",
-            "empty": "Existing flow file is empty",
-            "invalid": "Existing flow file is not valid json",
-            "restore": "Restoring flow file backup : __path__",
-            "restore-fail": "Restoring flow file backup failed : __message__"
+            "flows-file": "Flows file     : __path__",
+            "create": "Creating new __type__ file",
+            "empty": "Existing __type__ file is empty",
+            "invalid": "Existing __type__ file is not valid json",
+            "restore": "Restoring __type__ file backup : __path__",
+            "restore-fail": "Restoring __type__ file backup failed : __message__"
         }
     }
 }

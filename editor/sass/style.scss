@@ -34,14 +34,20 @@
 
 @import "editor";
 @import "library";
+@import "search";
 
 @import "tabs";
 @import "tab-config";
 @import "tab-info";
 @import "popover";
 @import "flow";
+@import "palette-editor";
+@import "diff";
 
-@import "typedInput";
+
+@import "ui/common/editableList";
+@import "ui/common/searchBox";
+@import "ui/common/typedInput";
 
 @import "dragdrop";
 
@@ -52,7 +58,7 @@ body {
     font-size: 14px;
     font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif;
     padding-top: 100px;
-    background: #f3f3f3;
+    background: $background-color;
 }
 
 #main-container {
@@ -81,11 +87,13 @@ code, pre {
 }
 
 code {
-  padding: 0px 4px;
+  padding: 0px 3px 2px 3px;
+  margin: 1px;
   color: #AD1625;
   white-space: nowrap;
   background-color: #f7f7f9;
   border: 1px solid #e1e1e8;
+  border-radius: 2px;
 }
 
 pre {
