@@ -18,6 +18,7 @@ var clone = require("clone");
 var when = require("when");
 
 var Flow = require('./Flow');
+var redNodes = require('../');
 
 var typeRegistry = require("../registry");
 var context = require("../context")
@@ -110,7 +111,7 @@ function setConfig(_config,type,muteLog) {
         });
     }
 
-    require('../dnr').publish();
+    require('../dnr').publish(newFlowConfig, diff, this);
     return configSavePromise
         .then(function() {
             activeConfig = config;
@@ -388,6 +389,7 @@ function updateMissingTypes() {
 }
 
 function addFlow(flow) {
+    console.log(flow);
     var i,node;
     if (!flow.hasOwnProperty('nodes')) {
         throw new Error('missing nodes property');

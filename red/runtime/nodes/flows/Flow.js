@@ -31,7 +31,9 @@ function Flow(global,flow) {
     var statusNodeMap = {};
 
     this.start = function(diff) {
-        return;
+        if (1){
+            return;
+        }
         var node;
         var newNode;
         var id;
@@ -100,7 +102,9 @@ function Flow(global,flow) {
     }
 
     this.stop = function(stopList) {
-        return;
+        if (1) {
+            return;
+        }
         return when.promise(function(resolve) {
             var i;
             if (stopList) {
@@ -266,15 +270,16 @@ function mapEnvVarProperties(obj,prop) {
 function createNode(type,config) {
     if (config.constraints){
         var hasConstraint = false;
-        for (c in config.constraints){
+        for (var c in config.constraints){
             if (config.constraints.hasOwnProperty(c)){
                 hasConstraint = true;
             }
         }
         if (hasConstraint){
             var dnrResult = require('../dnr').process(config);
-            if (dnrResult !== config)
+            if (dnrResult !== config){
                 return dnrResult;
+            }
         }
     }
     

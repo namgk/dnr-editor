@@ -93,7 +93,7 @@ RED.workspaces = (function() {
                 RED.sidebar.config.refresh();
             },
             ondblclick: function(tab) {
-                if (tab.type != "subflow") {
+                if (tab.type != "subflow_tab") {
                     showRenameWorkspaceDialog(tab.id);
                 } else {
                     RED.editor.editSubflow(RED.nodes.subflow(tab.id));

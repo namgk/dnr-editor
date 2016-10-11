@@ -39,7 +39,8 @@ module.exports = function(grunt) {
             },
             all: { src: ['test/**/*_spec.js'] },
             core: { src: ["test/_spec.js","test/red/**/*_spec.js"]},
-            nodes: { src: ["test/nodes/**/*_spec.js"]}
+            nodes: { src: ["test/nodes/**/*_spec.js"]},
+            dnr: {src: ['test/dnr/*_spec.js']}
         },
         jshint: {
             options: {
@@ -409,6 +410,10 @@ module.exports = function(grunt) {
     grunt.registerTask('test-nodes',
         'Runs unit tests on core nodes',
         ['simplemocha:nodes']);
+
+    grunt.registerTask('test-dnr',
+        'Runs unit tests on dnr',
+        ['simplemocha:dnr']);
 
     grunt.registerTask('build',
         'Builds editor content',
