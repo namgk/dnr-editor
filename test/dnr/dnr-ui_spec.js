@@ -20,9 +20,5 @@ describe('DNR Editor', function() {
       browser.assert.element('#btn-constraints');
       done();
     });
-
-    // it('should see welcome page', function() {
-    //   browser.assert.text('title', 'Welcome To Brains Depot');
-    // });
   });
 });
