@@ -27,7 +27,7 @@
     </div>
     <div class="form-row">
         <label for="node-input-url"><i class="fa fa-globe"></i> <span data-i18n="httpin.label.url"></span></label>
-        <div id="node-input-url" contenteditable="true" placeholder="http://"></div>
+        <input id="node-input-url" type="text" placeholder="http://">
     </div>
 
     <div class="form-row">
@@ -80,7 +80,7 @@
         pairs to be added as request headers</li>
         <li><code>payload</code> is sent as the body of the request</li>
     </ul>
-    <p>When configured within the node, the URL property can contain <a href="http://mustache.github.io/mustache.5.html" target="_new">mustache-style</a> tags. These allow the
+    <p>When configured within the node, the URL property can contain <a href="http://mustache.github.io/mustache.5.html" target="_blank">mustache-style</a> tags. These allow the
     url to be constructed using values of the incoming message. For example, if the url is set to
     <code>example.com/{{{topic}}}</code>, it will have the value of <code>msg.topic</code> automatically inserted.
     Using {{{...}}} prevents mustache from escaping characters like / & etc.</p>
@@ -102,7 +102,7 @@
             name: {value:""},
             method:{value:"GET"},
             ret: {value:"txt"},
-            url:{value:"",format:"url"},
+            url:{value:""},
             tls: {type:"tls-config",required: false}
         },
         credentials: {

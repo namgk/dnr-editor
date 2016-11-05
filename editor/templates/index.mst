@@ -102,7 +102,7 @@
 </div>
 
 
-<div id="node-dialog-flow-metadata" class="hide">
+<div id="node-dialog-flow-metadata" class="hide node-red-dialog">
     <div class="form-row">
         <label for="flow-id" ><i class="fa fa-cloud"></i>Flow Id:</label>
         <input type="text" id="flow-id" readonly>
@@ -111,7 +111,7 @@
     </div>
 </div>
 
-<div id="node-dialog-new-constraints" class="hide">
+<div id="node-dialog-new-constraints" class="hide node-red-dialog">
     <div class="form-row">
         <label for="constraint-id" ><i class="fa fa-cloud"></i>Constraint Id:</label>
         <input type="text" id="constraint-id">

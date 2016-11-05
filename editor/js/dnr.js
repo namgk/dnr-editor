@@ -27,13 +27,14 @@
 
       $("#node-dialog-new-constraints").dialog({
         title:"Define new constraint",
+        modal: true,
         autoOpen: false,
         width: 500,
         open: function(e) {
-            RED.keyboard.disable();
+            // RED.keyboard.disable();
         },
         close: function(e) {
-            RED.keyboard.enable();
+            // RED.keyboard.enable();
         },
         buttons: 
         {
@@ -47,12 +48,13 @@
       $("#node-dialog-flow-metadata").dialog({
         title:"Configure metadata of this flow",
         autoOpen: false,
+        modal: true,
         width: 500,
         open: function(e) {
-            RED.keyboard.disable();
+            // RED.keyboard.disable();
         },
         close: function(e) {
-            RED.keyboard.enable();
+            // RED.keyboard.enable();
         },
         buttons: 
         {

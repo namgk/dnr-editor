@@ -1,3 +1,30 @@
+#### 0.15.2: Maintenance Release
+
+ - Revert bidi changes to nodes and hide menu option until fixed Fixes #1024
+ - Let xml node set options both ways
+ - Bump serialport to use version 4
+ - gpio node handle multiple bits of data returned in one go
+ - HTTP In should pass application/octet-stream as buffer not string Fixes #1023
+ - Handle missing httpNodeRoot setting properly
+ - Config sidebar not handling node definition error properly
+ - Add minimum show time to deploy spinner to avoid flicker
+ - Add work-in-progress update button to palette-editor
+ - Add log.removeHandler function
+ - Add Crtl/Shift/p shortcut for manage palette
+ - Add spinner to deploy button
+ - Status messages from nodes in subflows not delegated properly Fixes #1016
+ - fix spelling in join node info
+ - Speed up tab scrolling
+ - Update delay burst test to be more tolerant of timing Fixes #1013
+
+#### 0.15.1: Maintenance Release
+
+ - Update default palette catalogue to use https
+ - Disable palette editor if npm not found - and fix for Windows
+ - Searching package catalogue should be case-insensitive Fixes #1010
+ - contenteditable fields not handled in config nodes Fixes #1011
+ - Change html link refs from `_new` to `_blank` to be standards compliant
+
 #### 0.15.0: Milestone Release
 
 Runtime
@@ -32,7 +59,7 @@ Editor
 
 Nodes
 
- - Inject node label - show topic for timestamp mode if short 
+ - Inject node label - show topic for timestamp mode if short
  - Let change node set type if total match
  - Clean up status on close for several core nodes.
  - Change node: re-parse JSON set value each time to avoid pass-by-ref
