@@ -239,7 +239,9 @@ Node.prototype.warn = function(msg) {
 };
 
 Node.prototype.error = function(logMessage,msg) {
-    logMessage = logMessage || "";
+    if (typeof logMessage != 'boolean') {
+        logMessage = logMessage || "";
+    }
     log_helper(this, Log.ERROR, logMessage);
     /* istanbul ignore else */
     if (msg) {
