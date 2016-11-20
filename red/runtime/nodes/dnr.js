@@ -19,37 +19,37 @@ function publish(config, diff, flows){
     return;
   }
 
-  if (!diff || !diff.changed){
-    return;
-  }
+  // if (!diff || !diff.changed){
+  //   return;
+  // }
 
-  var tobePublished = [];
+  // var tobePublished = [];
 
-  console.log(diff);
-  console.log('----------------');
+  // console.log(diff);
+  // console.log('----------------');
   
-  if (config.subflows){
-    console.log(JSON.stringify(config.subflows));
-    console.log('----------------');
-    Object.keys(config.subflows).forEach(function(key) {
-      var subflow = config.subflows[key];
-      tobePublished.push(subflow);
-    });
-  }
+  // if (config.subflows){
+  //   console.log(JSON.stringify(config.subflows));
+  //   console.log('----------------');
+  //   Object.keys(config.subflows).forEach(function(key) {
+  //     var subflow = config.subflows[key];
+  //     tobePublished.push(subflow);
+  //   });
+  // }
 
-  for (var i = 0; i < diff.changed.length; i++){
-    var id = diff.changed[i];
-    var changedFlow = flows.getFlow(id);
-    if (!changedFlow){
-      continue;
-    }
+  // for (var i = 0; i < diff.changed.length; i++){
+  //   var id = diff.changed[i];
+  //   var changedFlow = flows.getFlow(id);
+  //   if (!changedFlow){
+  //     continue;
+  //   }
 
-    tobePublished.push(changedFlow);
-    console.log(JSON.stringify(changedFlow));
-    console.log('----------------');
-  }
+  //   tobePublished.push(changedFlow);
+  //   console.log(JSON.stringify(changedFlow));
+  //   console.log('----------------');
+  // }
 
-  console.log(JSON.stringify(tobePublished));
+  // console.log(JSON.stringify(tobePublished));
   client.publish('dnr-new-flows', (settings.https ? 'https' : 'http') + '://' + settings.uiHost + ':' + settings.uiPort + '/flows');
 }
 
