@@ -19,14 +19,15 @@
 
     function init() {
       $('<li><span class="deploy-button-group button-group">'+
-        '<a id="btn-constraints" class="deploy-button disabled" href="#"> <span>'+RED._("deploy.createConstraints")+'</span></a>'+
+        '<a id="btn-constraints" class="deploy-button" href="#"> <span>'+RED._("deploy.createConstraints")+'</span></a>'+
         '<a id="btn-constraints-options" data-toggle="dropdown" class="deploy-button" href="#"><i class="fa fa-caret-down"></i></a>'+
         '</span></li>').prependTo(".header-toolbar");
 
-      $('#btn-constraints').click(function() { $( "#node-dialog-new-constraints" ).dialog( "open" ); });
+      $('#btn-constraints').click(function() { 
+        $( "#node-dialog-new-constraints" ).dialog( "open" ); });
 
       $("#node-dialog-new-constraints").dialog({
-        title:"Define new constraint",
+        title:"Create a deployment requirement",
         modal: true,
         autoOpen: false,
         width: 500,
