@@ -253,8 +253,10 @@
     }
 
     function getRandomColor(){
-      var possibleColor = ["#e4d9d7", "#a784ec", "#ffbbbf", "#b6e4e1", 
-            "#c46170", "#adff5f", "#ad98d6", "#b6c5e0", "#f7dbe4"];
+      var possibleColor = ["#4286f4", "#f404e0", "#f40440", "#f42404", 
+            "#f4a804", "#2d9906", "#069959", "#068c99", "#8f0699",
+            "#5103c6", "#c66803", "#c64325", "#c425c6", "#7625c6", "#c62543",
+            "#25c6a1", "#187f67", "#407266", "#567240", "#bf3338", "#bf337b"];
 
       var result = possibleColor[Math.ceil(Math.random() * possibleColor.length) - 1];
 
