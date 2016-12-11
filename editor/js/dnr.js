@@ -175,28 +175,28 @@
 
     }
 
-    // add a constraint to constraint drowdown list
-    function addConstraintToGui(c){
-      // check if c id is unique (exist or not)
-      for (var i = 0; i < constraints.length; i++){
-        if ((c.id && c.id === constraints[i].id) || 
-            c === constraints[i].id){
-          return
-        }
-      }  
+    // // add a constraint to constraint drowdown list
+    // function addConstraintToGui(c){
+    //   // check if c id is unique (exist or not)
+    //   for (var i = 0; i < constraints.length; i++){
+    //     if ((c.id && c.id === constraints[i].id) || 
+    //         c === constraints[i].id){
+    //       return
+    //     }
+    //   }  
 
-      // add it to the constraints list
-      c.fill = c.fill ? c.fill : randomColor();
-      c.text = c.text ? c.text : c.id;
-      constraints.push(c);
+    //   // add it to the constraints list
+    //   c.fill = c.fill ? c.fill : randomColor();
+    //   c.text = c.text ? c.text : c.id;
+    //   constraints.push(c);
 
-      RED.menu.addItem("btn-constraints-options", {
-        id:c.id,
-        label:c.id,
-        onselect:function(s) { setNodeConstraint(c)}
-      });
+    //   RED.menu.addItem("btn-constraints-options", {
+    //     id:c.id,
+    //     label:c.id,
+    //     onselect:function(s) { setNodeConstraint(c)}
+    //   });
 
-    }
+    // }
 
 
     /* Link constraints */
@@ -312,10 +312,7 @@
      * Constraints and Nodes are Many to Many relationship
      * @param {constraint} c - The constraint being applyed to 
      */
-    function applyingConstraint(c){
-      if (!getConstraint(c))
-        return;
-
+    function setNodeConstraint(c){
       var appliedTo = 0;
 
       // TODO: either bind constraint to nodes
