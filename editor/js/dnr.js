@@ -18,8 +18,9 @@
      var constraints = [];
 
     function init() {
+      /* node constraints */
       $('<li><span class="deploy-button-group button-group">'+
-        '<a id="btn-constraints" class="deploy-button" href="#"> <span>'+RED._("deploy.createConstraints")+'</span></a>'+
+        '<a id="btn-constraints" class="deploy-button" href="#"> <span>Node Requirements</span></a>'+
         '<a id="btn-constraints-options" data-toggle="dropdown" class="deploy-button" href="#"><i class="fa fa-caret-down"></i></a>'+
         '</span></li>').prependTo(".header-toolbar");
 
@@ -27,7 +28,7 @@
         $( "#node-dialog-new-constraints" ).dialog( "open" ); });
 
       $("#node-dialog-new-constraints").dialog({
-        title:"Create a deployment requirement",
+        title:"Create a node requirement",
         modal: true,
         autoOpen: false,
         width: 500,
@@ -39,27 +40,7 @@
         },
         buttons: 
         {
-            "Create": newConstraintDialog,
-            Cancel: function() {
-                $( this ).dialog( "close" );
-            }
-        }
-      });
-
-      $("#node-dialog-flow-metadata").dialog({
-        title:"Configure metadata of this flow",
-        autoOpen: false,
-        modal: true,
-        width: 500,
-        open: function(e) {
-            // RED.keyboard.disable();
-        },
-        close: function(e) {
-            // RED.keyboard.enable();
-        },
-        buttons: 
-        {
-            "Create": newFlowMetadataDialog,
+            "Create": createConstraint,
             Cancel: function() {
                 $( this ).dialog( "close" );
             }
@@ -70,27 +51,35 @@
         options: []
       });
 
-      var constraintMenu = {
-          id:"menu-item-constraints",
-          toggle:true,
-          selected: true,
-          label:RED._("menu.label.displayConstraints"),
-          onselect:function(s) { toggleConstraints(s)}
-        };
+      /* link constraints */ 
+      $('<li><span class="deploy-button-group button-group">'+
+        '<a id="btn-link-constraints" data-toggle="dropdown" class="deploy-button" href="#">'+
+        'Link Requirements ' + 
+        '<i class="fa fa-caret-down"></i></a>'+
+        '</span></li>').prependTo(".header-toolbar");
 
-      RED.menu.addItem("menu-item-view-menu", constraintMenu);
+      RED.menu.init({id:"btn-link-constraints",
+          options: [
+              {id:"1-1",label:'1-1',onselect:function(){setLinkConstraint('11')}},
+              {id:"1-N",label:'1-N',onselect:function(){setLinkConstraint('1N')}},
+              {id:"N-1",label:'N-1',onselect:function(){setLinkConstraint('N1')}},
+              {id:"N-N",label:'N-N',onselect:function(){setLinkConstraint('NN')}}
+          ]
+      });
 
-      var flowMenu = {
-          id:"menu-item-flows",
-          label:"Metadata",
-          onselect:function(s) { showFlowMetadata(s)}
-        };
-
-      RED.menu.addItem("menu-item-workspace", flowMenu);
-    }
+      // toggle button to show/hide constraints
+      RED.menu.addItem("menu-item-view-menu", {
+        id:"menu-item-constraints",
+        toggle:true,
+        selected: true,
+        label: 'Show constraints',
+        onselect:function(s) { toggleConstraints(s)}
+      });
+    }// end init
 
     function toggleConstraints(checked) {
-      RED.view.constraints(checked);
+      d3.selectAll('.node_constraints_group').style("display", checked ? "inline" : "none")
+      d3.selectAll('.link_constraint_group').style("display", checked ? "inline" : "none")
     }
 
     function showFlowMetadata(){
@@ -128,7 +117,7 @@
       $( this ).dialog( "close" );
     }
 
-    function newConstraintDialog(){
+    function createConstraint(){
       var constraintId = $( "#constraint-id" ).val();
       if (!constraintId){
           alert('constrantId is required');
@@ -158,51 +147,164 @@
       if (custom)
           creatingConstraint['custom'] = custom;
 
-      // add it to the top down box
-      addConstraint(creatingConstraint);
+      addConstraintToGui(creatingConstraint);
 
       $( this ).dialog( "close" );
     }
 
-    function testConstraints(){
-      var c = {
-        id: 'Location in Vancouver',
-        loc: '143.23232, -93.232233'
-      };
-      var c2 = {
-        id: 'Location in Burnaby',
-        loc: '143.267732, -93.996868'
-      };
-
-      addConstraint(c);
-      addConstraint(c2);
-
-      applyingConstraint(getConstraint(c));
-      applyingConstraint(getConstraint(c2));
-    }
-
-    function addConstraint(c){
-      if (getConstraint(c)){
-        // alert("Constraint name duplicated");
-        return;
-      }
-
-      var newConstraintOption = {
-        id:c.id,
-        // toggle:"deploy-type",
-        // icon:"red/images/deploy-full.png",
-        label:c.id,
-        // sublabel:RED._("deploy.fullDesc"),
-        // selected: true, 
-        onselect:function(s) { applyingConstraint(c)}
-      };
-
-      RED.menu.addItem("btn-constraints-options", newConstraintOption);
+    // add a constraint to constraint drowdown list
+    function addConstraintToGui(c){
+      // check if c id is unique (exist or not)
+      for (var i = 0; i < constraints.length; i++){
+        if ((c.id && c.id === constraints[i].id) || 
+            c === constraints[i].id){
+          return
+        }
+      }  
 
       // add it to the constraints list
-      c.fill = c.fill ? c.fill : getRandomColor();
+      c.fill = c.fill ? c.fill : randomColor();
       c.text = c.text ? c.text : c.id;
       constraints.push(c);
+
+      RED.menu.addItem("btn-constraints-options", {
+        id:c.id,
+        label:c.id,
+        onselect:function(s) { setNodeConstraint(c)}
+      });
+
+    }
+
+    // add a constraint to constraint drowdown list
+    function addConstraintToGui(c){
+      // check if c id is unique (exist or not)
+      for (var i = 0; i < constraints.length; i++){
+        if ((c.id && c.id === constraints[i].id) || 
+            c === constraints[i].id){
+          return
+        }
+      }  
+
+      // add it to the constraints list
+      c.fill = c.fill ? c.fill : randomColor();
+      c.text = c.text ? c.text : c.id;
+      constraints.push(c);
+
+      RED.menu.addItem("btn-constraints-options", {
+        id:c.id,
+        label:c.id,
+        onselect:function(s) { setNodeConstraint(c)}
+      });
+
+    }
+
+
+    /* Link constraints */
+
+    /** 
+     * Applying a link type to selected link
+     * Now the nodes' constraints do not only contain the node's constraints
+     // but also the type of its links on its two ends (inputs and outputs)
+     * @param {linkType} wt - The link type being applyed to 
+     */
+    function setLinkConstraint(linkType){
+      var link = d3.select('.link_selected')
+      if (link.data().length > 1){
+        console.log('WARNING, choosing 2 links at the same time!!!')
+        return;
+      }
+      if (!link.data()[0]){
+        return
+      }
+
+      var d = link.data()[0]
+
+      var source = d.source
+      var sourcePort = d.sourcePort
+      var target = d.target
+      var midX = (d.x1+d.x2) / 2
+      var midY = (d.y1+d.y2) / 2
+
+      if (!source['constraints'])
+        source['constraints'] = {};
+      if (!target['constraints'])
+        target['constraints'] = {};
+
+      var sourceConstraints = source.constraints
+      var targetConstraints = target.constraints
+
+      if (!sourceConstraints.link){
+        sourceConstraints.link = {
+          in: '1',// 1 or N, default is 1
+          out: {}
+        }
+      }
+      if (!targetConstraints.link){
+        targetConstraints.link = {
+          in: '1',
+          out: {}
+        }
+      }
+
+      sourceConstraints.link.out[sourcePort] = linkType[0]
+      targetConstraints.link.in = linkType[1]
+
+      appendLinkConstraint(link)
+
+      RED.nodes.dirty(true);// enabling deploy
+    }
+
+    function appendLinkConstraint(link){
+      var d = link.data()[0]
+      
+      // TODO: d.x1, x2, y1, y2 not yet available now
+      // if the flow is first loaded from the server
+
+      var source = d.source
+      var sourcePort = d.sourcePort
+      var target = d.target
+      var midX = (d.x1+d.x2) / 2
+      var midY = (d.y1+d.y2) / 2
+
+      var sourceLink, targetLink, linkConstraint
+
+      try {
+        sourceLink = source.constraints.link
+        targetLink = target.constraints.link
+        linkConstraint = sourceLink.out[sourcePort] + '-' + targetLink.in
+      } catch(e){}
+
+      if (!linkConstraint){
+        return
+      }
+
+      link.append("svg:g")
+        .attr("class","link_constraint_group")
+        .style("display","inline")
+        .attr("transform","translate(" + midX + "," + midY+ ")")
+        .append("svg:text")
+        .text(linkConstraint)
+    }
+
+    /*
+      called whenever a node is moved, to update the location of label
+      according to the location of link
+      TODO: only redraw the link that moves
+    */
+    function redrawLinkConstraint(){
+      $('.link').each(function(e,da){
+        var aLink = d3.select(da)
+        if (!aLink.data()[0]){
+          return
+        }
+
+        var d = aLink.data()[0]
+        var midX = (d.x1+d.x2) / 2
+        var midY = (d.y1+d.y2) / 2
+
+        aLink.selectAll('.link_constraint_group')   
+          .attr("transform","translate(" + midX + "," + midY+ ")")
+      })
     }
 
     /** 
@@ -253,7 +355,28 @@
       RED.nodes.dirty(true);
     }
 
-    function getRandomColor(){
+    // n: d3 data object, node: node JSON object
+    function prepareConstraints(n, node){
+      if (n.constraints)
+        node['constraints'] = n.constraints;
+    }
+
+    // when server starts, load constraints to constraints list 
+    function loadConstraints(nodes){
+      for (var i = 0; i < nodes.length; i++){
+        if (!nodes[i]['constraints'])
+          continue;
+
+        var nConstraints = nodes[i].constraints;
+        for (c in nConstraints){
+          if (c !== 'link'){
+            addConstraintToGui(nConstraints[c]);
+          }
+        }
+      }
+    }
+
+    function randomColor(){
       var possibleColor = ["#4286f4", "#f404e0", "#f40440", "#f42404", 
             "#f4a804", "#2d9906", "#069959", "#068c99", "#8f0699",
             "#5103c6", "#c66803", "#c64325", "#c425c6", "#7625c6", "#c62543",
@@ -264,22 +387,7 @@
       return result;
     }
 
-    function removeConstraint(c) {
-      for (var i = 0; i < constraints.length; i++){
-          if ((c.id && c.id === constraints[i].id) || c === constraints[i].id)
-              constraints.splice(i, 1);
-      }
-    }
-    function getConstraint(c){
-      for (var i = 0; i < constraints.length; i++){
-          if ((c.id && c.id === constraints[i].id) || c === constraints[i].id)
-              return constraints[i];
-      }  
-      return null;
-    }
-    function allConstraint(){
-      return JSON.parse(JSON.stringify(constraints));
-    }
+   
     function append_constraints(node){
       var constraints = node.append("svg:g").attr("class","node_constraints_group").style("display","none");
     }
@@ -288,12 +396,13 @@
       var node_constraints_group = thisNode.selectAll('.node_constraints_group');
       var node_constraints_list = thisNode.selectAll('.node_constraint');
 
-      if (!showConstraints || !d.constraints) {
-        node_constraints_group.style("display","none");
-        return;
-      }
+      // if (!showConstraints || !d.constraints) {
+      //   node_constraints_group.style("display","none");
+      //   return;
+      // }
 
       node_constraints_group.style("display","inline");
+
 
       var nodeConstraints = [];
 
@@ -364,33 +473,14 @@
       } 
     }
 
-    function prepareConstraints(n, node){
-      if (n.constraints)
-        node['constraints'] = n.constraints;
-    }
-
-    function loadConstraints(nodes){
-      for (var i = 0; i < nodes.length; i++){
-        if (!nodes[i]['constraints'])
-          continue;
-
-        var nConstraints = nodes[i].constraints;
-        for (c in nConstraints){
-          if (nConstraints.hasOwnProperty(c))
-            addConstraint(nConstraints[c]);
-        }
-      }
-    }
-
     return {
-       addConstraint: addConstraint,
-       removeConstraint: removeConstraint,
-       getConstraint: getConstraint,
-       allConstraint: allConstraint,
-       appendConstraints: append_constraints,
-       redrawConstraints: redraw_constraints,
+       // appendNodeConstraints: appendNodeConstraints,
+       // appendLinkConstraint: appendLinkConstraint,
+       // redrawLinkConstraint: redrawLinkConstraint,
        prepareConstraints: prepareConstraints,
        loadConstraints: loadConstraints,
+       appendConstraints: append_constraints,
+       redrawConstraints: redraw_constraints,
        init: init
     }
  })();

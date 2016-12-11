@@ -18,7 +18,7 @@ var path = require("path");
 
 module.exports = function(grunt) {
 
-    var nodemonArgs = ["-v"];
+    var nodemonArgs = ['-v','-s','~/.dnr-editor/settings.js'];
     var flowFile = grunt.option('flowFile');
     if (flowFile) {
         nodemonArgs.push(flowFile);

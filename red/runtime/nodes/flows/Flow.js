@@ -268,21 +268,6 @@ function Flow(global,flow) {
 }
 
 function createNode(type,config) {
-    if (config.constraints){
-        var hasConstraint = false;
-        for (var c in config.constraints){
-            if (config.constraints.hasOwnProperty(c)){
-                hasConstraint = true;
-            }
-        }
-        if (hasConstraint){
-            var dnrResult = require('../dnr').process(config);
-            if (dnrResult !== config){
-                return dnrResult;
-            }
-        }
-    }
-    
     var nn = null;
     var nt = typeRegistry.get(type);
     if (nt) {
