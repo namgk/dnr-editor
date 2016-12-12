@@ -2004,6 +2004,8 @@ RED.view = (function() {
                 l.append("svg:path").attr("class","link_line link_path")
                     .classed("link_link", function(d) { return d.link })
                     .classed("link_subflow", function(d) { return !d.link && activeSubflow });
+                
+                RED.dnr.appendLinkConstraint(l)
             });
 
             link.exit().remove();
@@ -2036,6 +2038,8 @@ RED.view = (function() {
                         d.y1 = d.source.y+y;
                         d.x2 = d.target.x-d.target.w/2;
                         d.y2 = d.target.y;
+
+                        RED.dnr.redrawLinkConstraint(link)
 
                         return "M "+(d.source.x+d.source.w/2)+" "+(d.source.y+y)+
                             " C "+(d.source.x+d.source.w/2+scale*node_width)+" "+(d.source.y+y+scaleY*node_height)+" "+

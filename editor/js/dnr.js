@@ -175,30 +175,6 @@
 
     }
 
-    // // add a constraint to constraint drowdown list
-    // function addConstraintToGui(c){
-    //   // check if c id is unique (exist or not)
-    //   for (var i = 0; i < constraints.length; i++){
-    //     if ((c.id && c.id === constraints[i].id) || 
-    //         c === constraints[i].id){
-    //       return
-    //     }
-    //   }  
-
-    //   // add it to the constraints list
-    //   c.fill = c.fill ? c.fill : randomColor();
-    //   c.text = c.text ? c.text : c.id;
-    //   constraints.push(c);
-
-    //   RED.menu.addItem("btn-constraints-options", {
-    //     id:c.id,
-    //     label:c.id,
-    //     onselect:function(s) { setNodeConstraint(c)}
-    //   });
-
-    // }
-
-
     /* Link constraints */
 
     /** 
@@ -227,28 +203,14 @@
 
       if (!source['constraints'])
         source['constraints'] = {};
-      if (!target['constraints'])
-        target['constraints'] = {};
 
       var sourceConstraints = source.constraints
-      var targetConstraints = target.constraints
 
       if (!sourceConstraints.link){
-        sourceConstraints.link = {
-          in: '1',// 1 or N, default is 1
-          out: {}
-        }
-      }
-      if (!targetConstraints.link){
-        targetConstraints.link = {
-          in: '1',
-          out: {}
-        }
+        sourceConstraints.link = {}
       }
 
-      sourceConstraints.link.out[sourcePort] = linkType[0]
-      targetConstraints.link.in = linkType[1]
-
+      sourceConstraints.link[sourcePort] = linkType
       appendLinkConstraint(link)
 
       RED.nodes.dirty(true);// enabling deploy
@@ -257,27 +219,23 @@
     function appendLinkConstraint(link){
       var d = link.data()[0]
       
-      // TODO: d.x1, x2, y1, y2 not yet available now
-      // if the flow is first loaded from the server
-
       var source = d.source
       var sourcePort = d.sourcePort
-      var target = d.target
-      var midX = (d.x1+d.x2) / 2
-      var midY = (d.y1+d.y2) / 2
+      var midX = (d.x1+d.x2) / 2 || 0
+      var midY = (d.y1+d.y2) / 2 || 0
 
-      var sourceLink, targetLink, linkConstraint
+      var sourceLink, linkConstraint
 
       try {
         sourceLink = source.constraints.link
-        targetLink = target.constraints.link
-        linkConstraint = sourceLink.out[sourcePort] + '-' + targetLink.in
+        linkConstraint = sourceLink[sourcePort]
       } catch(e){}
 
       if (!linkConstraint){
         return
       }
 
+      link.selectAll('.link_constraint_group').remove();
       link.append("svg:g")
         .attr("class","link_constraint_group")
         .style("display","inline")
@@ -291,24 +249,28 @@
       according to the location of link
       TODO: only redraw the link that moves
     */
-    function redrawLinkConstraint(){
-      $('.link').each(function(e,da){
-        var aLink = d3.select(da)
-        if (!aLink.data()[0]){
-          return
-        }
+    function redrawLinkConstraint(l){
+      if (l.attr('class').indexOf('link_background') === -1){
+        return
+      }
 
-        var d = aLink.data()[0]
-        var midX = (d.x1+d.x2) / 2
-        var midY = (d.y1+d.y2) / 2
+      var aLink = d3.select(l[0][0].parentNode).selectAll('.link_constraint_group')
+      if (!aLink.data()[0]){
+        return
+      }
 
-        aLink.selectAll('.link_constraint_group')   
-          .attr("transform","translate(" + midX + "," + midY+ ")")
-      })
+      var d = aLink.data()[0]
+      var midX = (d.x1+d.x2) / 2
+      var midY = (d.y1+d.y2) / 2
+
+      console.log(aLink)
+
+      aLink.attr("transform","translate(" + midX + "," + midY+ ")")
     }
 
     /** 
-     * Applying a constraint to selected nodes
+     * Applying a constraint to selected nodes, it will be shown on redrawing, after
+     * clicking on the canvas
      * Constraints and Nodes are Many to Many relationship
      * @param {constraint} c - The constraint being applyed to 
      */
@@ -472,8 +434,8 @@
 
     return {
        // appendNodeConstraints: appendNodeConstraints,
-       // appendLinkConstraint: appendLinkConstraint,
-       // redrawLinkConstraint: redrawLinkConstraint,
+       appendLinkConstraint: appendLinkConstraint,
+       redrawLinkConstraint: redrawLinkConstraint,
        prepareConstraints: prepareConstraints,
        loadConstraints: loadConstraints,
        appendConstraints: append_constraints,
