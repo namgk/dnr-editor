@@ -210,7 +210,7 @@
         sourceConstraints.link = {}
       }
 
-      sourceConstraints.link[sourcePort] = linkType
+      sourceConstraints.link[sourcePort + '_' + target.id] = linkType
       appendLinkConstraint(link)
 
       RED.nodes.dirty(true);// enabling deploy
@@ -221,6 +221,7 @@
       
       var source = d.source
       var sourcePort = d.sourcePort
+      var target = d.target
       var midX = (d.x1+d.x2) / 2 || 0
       var midY = (d.y1+d.y2) / 2 || 0
 
@@ -228,7 +229,7 @@
 
       try {
         sourceLink = source.constraints.link
-        linkConstraint = sourceLink[sourcePort]
+        linkConstraint = sourceLink[sourcePort + '_' + target.id]
       } catch(e){}
 
       if (!linkConstraint){
@@ -237,11 +238,18 @@
 
       link.selectAll('.link_constraint_group').remove();
       link.append("svg:g")
+        .style({display:'inline',fill: 'brown', 'font-size': 12})
         .attr("class","link_constraint_group")
-        .style("display","inline")
         .attr("transform","translate(" + midX + "," + midY+ ")")
         .append("svg:text")
         .text(linkConstraint)
+        .on("click", (function(){
+          return function(){
+            link.selectAll('.link_constraint_group').remove();
+            delete sourceLink[sourcePort + '_' + target.id]
+            RED.nodes.dirty(true);
+          }
+        })())
     }
 
     /*
@@ -262,8 +270,6 @@
       var d = aLink.data()[0]
       var midX = (d.x1+d.x2) / 2
       var midY = (d.y1+d.y2) / 2
-
-      console.log(aLink)
 
       aLink.attr("transform","translate(" + midX + "," + midY+ ")")
     }
