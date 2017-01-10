@@ -118,9 +118,9 @@ function setFlows(_config,type,muteLog) {
             }
             return storage.saveFlows(saveConfig);
         });
+        require('../../dnr').publish(newFlowConfig, diff, this);
     }
 
-    require('../dnr').publish(newFlowConfig, diff, this);
     return configSavePromise
         .then(function(flowRevision) {
             activeConfig = {

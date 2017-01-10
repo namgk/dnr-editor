@@ -1,6 +1,7 @@
 var mqtt = require('mqtt');
-var client = mqtt.connect('mqtt://test.mosquitto.org');
-var settings = require('../../../settings.js');
+var client = mqtt.connect('mqtt://localhost:1883');
+var settings = require('./settings.js');
+var red = require("../red");
 
 var connected = false;
 
@@ -18,6 +19,10 @@ function publish(config, diff, flows){
     setTimeout(publish, 2000);
     return;
   }
+
+  console.log(config)
+  console.log(diff)
+  red.comms.publish('deployment', config, false)
 
   // if (!diff || !diff.changed){
   //   return;

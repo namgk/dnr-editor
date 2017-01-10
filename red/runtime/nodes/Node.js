@@ -130,8 +130,6 @@ Node.prototype.send = function(msg) {
             node = flows.get(this._wire);
             /* istanbul ignore else */
             if (node) {
-                // DNR: adding origin to msg
-                msg._origin = this.id;
                 node.receive(msg);
             }
             return;
