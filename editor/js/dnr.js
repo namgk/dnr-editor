@@ -16,6 +16,7 @@
 
  RED.dnr = (function() {
      var constraints = [];
+     var linkConstraints = {};
 
     function init() {
       /* node constraints */
@@ -280,21 +281,29 @@
       var midX = (d.x1+d.x2) / 2
       var midY = (d.y1+d.y2) / 2
 
-      if (!source['constraints'])
-        source['constraints'] = {};
+      linkConstraints[source.id + '_' + sourcePort + '_' + target.id] = linkType
 
-      var sourceConstraints = source.constraints
-
-      if (!sourceConstraints.link){
-        sourceConstraints.link = {}
-      }
-
-      sourceConstraints.link[sourcePort + '_' + target.id] = linkType
-      appendLinkConstraint(link)
+      link.selectAll('.link_constraint_group').remove();
+      link.append("svg:g")
+        .style({display:'inline',fill: 'brown', 'font-size': 12})
+        .attr("class","link_constraint_group")
+        .attr("transform","translate(" + midX + "," + midY+ ")")
+        .append("svg:text")
+        .text(linkType)
+        .on("click", (function(){
+          return function(){
+            link.selectAll('.link_constraint_group').remove();
+            // delete sourceLink[sourcePort + '_' + target.id]
+            delete linkConstraints[source.id + 
+                        '_' + sourcePort + '_' + target.id]
+            RED.nodes.dirty(true);
+          }
+        })())
 
       RED.nodes.dirty(true);// enabling deploy
     }
 
+    // called when editor is initiated 
     function appendLinkConstraint(link){
       var d = link.data()[0]
       
@@ -304,14 +313,18 @@
       var midX = (d.x1+d.x2) / 2 || 0
       var midY = (d.y1+d.y2) / 2 || 0
 
-      var sourceLink, linkConstraint
+      var sourceLink, linkType
 
       try {
         sourceLink = source.constraints.link
-        linkConstraint = sourceLink[sourcePort + '_' + target.id]
+        linkType = sourceLink[sourcePort + '_' + target.id]
+        // clear the node's constraint for editor
+        delete sourceLink[sourcePort + '_' + target.id]
+        // set the temporary constraints store
+        linkConstraints[source.id + '_' + sourcePort + '_' + target.id] = linkType
       } catch(e){}
-
-      if (!linkConstraint){
+      
+      if (!linkType){
         return
       }
 
@@ -321,14 +334,59 @@
         .attr("class","link_constraint_group")
         .attr("transform","translate(" + midX + "," + midY+ ")")
         .append("svg:text")
-        .text(linkConstraint)
+        .text(linkType)
         .on("click", (function(){
           return function(){
             link.selectAll('.link_constraint_group').remove();
-            delete sourceLink[sourcePort + '_' + target.id]
+            // delete sourceLink[sourcePort + '_' + target.id]
+            delete linkConstraints[source.id + 
+                        '_' + sourcePort + '_' + target.id]
             RED.nodes.dirty(true);
           }
         })())
+    }
+
+    function addLinkConstraintsToData(data){
+      var flows = data.flows
+      for (var o in flows){
+        var obj = flows[o]
+
+        console.log(obj.wires)
+        if (!obj.wires){
+          continue
+        }
+
+        for (var i = 0; i< obj.wires.length; i++){
+          console.log(obj.wires[i])
+          for (var j = 0; j < obj.wires[i].length; j++){
+            console.log(obj.wires[i][j])
+            if (!obj.wires[i][j]){
+              continue
+            }
+
+            var link = obj.id + '_' + i + '_' + obj.wires[i][j]
+            var linkType = linkConstraints[link]
+            console.log(link)
+            console.log(linkConstraints)
+            if (!linkType){
+              continue
+            }
+
+            if (!obj.constraints){
+              obj.constraints = {}
+            }
+
+            if (!obj.constraints.link){
+              obj.constraints.link = {}
+            }
+
+            obj.constraints.link[i + '_' + obj.wires[i][j]] = linkType
+          }
+        }
+      }
+
+      console.log(data)
+
     }
 
     /*
@@ -518,7 +576,7 @@
     }
 
     return {
-       // appendNodeConstraints: appendNodeConstraints,
+       addLinkConstraintsToData: addLinkConstraintsToData,
        appendLinkConstraint: appendLinkConstraint,
        redrawLinkConstraint: redrawLinkConstraint,
        prepareConstraints: prepareConstraints,
