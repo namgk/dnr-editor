@@ -1,28 +1,32 @@
-var mqtt = require('mqtt');
-var client = mqtt.connect('mqtt://localhost:1883');
-var settings = require('./settings.js');
-var red = require("../red");
-
+// var mqtt = require('mqtt');
+// var client = mqtt.connect('mqtt://localhost:1883');
+// var settings = require('./settings.js');
 var connected = false;
 
-client.on('connect', function () {
-  connected = true;
-  client.subscribe('dnr-new-flows');
-});
+var ws = require("ws");
+var activeConnections = [];
+var wsServer;
 
-client.on('message', function (topic, message) {
-  console.log('DEBUG new flows available at: ' + message.toString());
-});
+var server;
+var settings;
+
+var heartbeatTimer;
+var lastSentTime;
+
+var webSocketKeepAliveTime = 15000;
+
+
+// client.on('connect', function () {
+//   connected = true;
+//   client.subscribe('dnr-new-flows');
+// });
+
+// client.on('message', function (topic, message) {
+//   console.log('DEBUG new flows available at: ' + message.toString());
+// });
 
 function publish(config, diff, flows){
-  if (!connected) {
-    setTimeout(publish, 2000);
-    return;
-  }
-
-  console.log(config)
-  console.log(diff)
-  red.comms.publish('deployment', config, false)
+  publishWs('deployment', config)
 
   // if (!diff || !diff.changed){
   //   return;
@@ -55,9 +59,116 @@ function publish(config, diff, flows){
   // }
 
   // console.log(JSON.stringify(tobePublished));
-  client.publish('dnr-new-flows', (settings.https ? 'https' : 'http') + '://' + settings.uiHost + ':' + settings.uiPort + '/flows');
+  // client.publish('dnr-new-flows', (settings.https ? 'https' : 'http') + '://' + settings.uiHost + ':' + settings.uiPort + '/flows');
+}
+
+function init(_server,_runtime) {
+  server = _server;
+  settings = _runtime.settings;
+
+  var path = settings.httpAdminRoot || "/";
+  path = (path.slice(0,1) != "/" ? "/":"") + path + (path.slice(-1) == "/" ? "":"/") + "dnr";
+  
+  wsServer = new ws.Server({
+    server:server,
+    path:path,
+    // Disable the deflate option due to this issue
+    //  https://github.com/websockets/ws/pull/632
+    // that is fixed in the 1.x release of the ws module
+    // that we cannot currently pickup as it drops node 0.10 support
+    perMessageDeflate: false
+  });
+
+  start()
+}
+
+function start(){
+  wsServer.on('connection',function(ws) {
+    activeConnections.push(ws);
+
+    ws.on('close',function() {
+      removeActiveConnection(ws);
+    });
+
+    ws.on('message', function(data,flags) {
+      var msg = null;
+      try {
+        msg = JSON.parse(data);
+      } catch(err) {
+        log.warn( 'dnr comms error: ' + err.toString() );
+        return;
+      }
+
+      try {
+        activeConnections.push(ws);
+        ws.send(JSON.stringify({conn:"ok"}));
+      } catch(err) {
+          // Just in case the socket closes before we attempt
+          // to send anything.
+      }
+    });
+
+    ws.on('error', function(err) {
+      log.warn( 'dnr comms error: ' + err.toString() );
+    });
+  });
+
+  wsServer.on('error', function(err) {
+    log.warn( 'dnr comms error: ' + err.toString() );
+  });
+
+  lastSentTime = Date.now();
+
+  heartbeatTimer = setInterval(function() {
+    var now = Date.now();
+    if (now-lastSentTime > webSocketKeepAliveTime) {
+      publishWs("dnrhb",lastSentTime);
+    }
+  }, webSocketKeepAliveTime);
+}
+
+function stop() {
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
+  }
+  if (wsServer) {
+    wsServer.close();
+    wsServer = null;
+  }
+}
+
+function publishWs(topic,data) {
+  if (server) {
+    lastSentTime = Date.now();
+    activeConnections.forEach(function(conn) {
+        publishTo(conn,topic,data);
+    });
+  }
+}
+
+function publishTo(ws,topic,data) {
+  var msg = JSON.stringify({topic:topic,data:data});
+  try {
+    ws.send(msg);
+  } catch(err) {
+    removeActiveConnection(ws);
+    log.warn( 'dnr comms error: ' + err.toString() );
+  }
+}
+
+function removeActiveConnection(ws) {
+    for (var i=0;i<activeConnections.length;i++) {
+        if (activeConnections[i] === ws) {
+            activeConnections.splice(i,1);
+            break;
+        }
+    }
 }
 
 module.exports = {
-	publish: publish
+	publish: publish,
+  init: init,
+  start:start,
+  stop:stop
 }

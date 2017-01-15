@@ -47,6 +47,49 @@
         }
       });
 
+      var seed_dialog = 
+        '<div id="seed-dialog" class="hide node-red-dialog">'+
+        '<form class="dialog-form form-horizontal">'+
+          '<div class="form-row">'+
+            '<textarea readonly style="resize: none; width: 100%; border-radius: 4px;font-family: monospace; font-size: 12px; background:#f3f3f3; padding-left: 0.5em; box-sizing:border-box;" id="seed-export" rows="5"></textarea>'+
+          '</div>'+
+        '</form></div>'
+
+      $(seed_dialog)
+      .appendTo("body")
+      .dialog({
+        modal: true,
+        autoOpen: false,
+        width: 500,
+        resizable: false,
+        buttons: [
+          {
+            id: "clipboard-dialog-cancel",
+            text: RED._("common.label.cancel"),
+            click: function() {
+              $( this ).dialog( "close" );
+            }
+          },
+          {
+            id: "clipboard-dialog-copy",
+            class: "primary",
+            text: RED._("clipboard.export.copy"),
+            click: function() {
+              $("#seed-export").select();
+              document.execCommand("copy");
+              document.getSelection().removeAllRanges();
+              RED.notify(RED._("clipboard.nodesExported"));
+              $( this ).dialog( "close" );
+            }
+          }
+        ],
+        open: function(e) {
+            $(this).parent().find(".ui-dialog-titlebar-close").hide();
+        },
+        close: function(e) {
+        }
+      });
+
       RED.menu.init({id:"btn-constraints-options",
         options: []
       });
@@ -75,7 +118,43 @@
         label: 'Show constraints',
         onselect:function(s) { toggleConstraints(s)}
       });
+      RED.menu.addItem("menu-item-view-menu", {
+        id:"menu-item-dnr",
+        toggle:false,
+        // selected: true,
+        label: 'Show dnr seed',
+        onselect:function() { showDnrSeed()}
+      });
     }// end init
+
+    function showDnrSeed(){
+      var operatorUrl = "http://0.0.0.0:1818"
+      var operatorToken = RED.settings.get("auth-tokens")
+      var dnrSeed = [
+        {
+          "id": "10cf5c3b.07a304",
+          "nodered": "",
+          "operatorUrl": operatorUrl,
+          "operator": "5647657c.c6e68c",
+          "type": "dnr-daemon",
+          "wires": [],
+          "x": 307.5,
+          "y": 129,
+          "z": "554b46b0.af1de8"
+        },
+        {
+          "id": "5647657c.c6e68c",
+          "type": "operator-credentials",
+          "credentials": {
+            "token": operatorToken
+          },
+          "z": ""
+        }
+      ]
+      $("#seed-export").val(JSON.stringify(dnrSeed))
+      $( "#seed-dialog" ).dialog( "open" )
+      // alert(JSON.stringify(dnrSeed))
+    }
 
     function toggleConstraints(checked) {
       d3.selectAll('.node_constraints_group').style("display", checked ? "inline" : "none")

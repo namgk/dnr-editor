@@ -19,6 +19,7 @@ var path = require('path');
 
 var runtime = require("./runtime");
 var api = require("./api");
+var dnr = require("./runtime/dnr");
 
 process.env.NODE_RED_HOME = process.env.NODE_RED_HOME || path.resolve(__dirname+"/..");
 
@@ -56,6 +57,7 @@ module.exports = {
         if (userSettings.httpAdminRoot !== false || userSettings.httpNodeRoot !== false) {
             runtime.init(userSettings,api);
             api.init(httpServer,runtime);
+            dnr.init(httpServer,runtime);
             apiEnabled = true;
         } else {
             runtime.init(userSettings);
