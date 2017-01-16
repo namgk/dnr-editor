@@ -59,6 +59,7 @@
       $(seed_dialog)
       .appendTo("body")
       .dialog({
+        title: 'Export DNR Seed',
         modal: true,
         autoOpen: false,
         width: 500,
@@ -129,32 +130,21 @@
     }// end init
 
     function showDnrSeed(){
-      var operatorUrl = "http://0.0.0.0:1818"
-      var operatorToken = RED.settings.get("auth-tokens")
+      var host = document.location.hostname;
+      var port = document.location.port;
+      var protocol = document.location.protocol
+
+      var operatorUrl = protocol + "//" + host + (port ? (":"+port) : "")
       var dnrSeed = [
         {
-          "id": "10cf5c3b.07a304",
-          "nodered": "",
+          "id":"f14195aa.25e298",
           "operatorUrl": operatorUrl,
-          "operator": "5647657c.c6e68c",
           "type": "dnr-daemon",
-          "wires": [],
-          "x": 307.5,
-          "y": 129,
-          "z": "554b46b0.af1de8"
-        },
-        {
-          "id": "5647657c.c6e68c",
-          "type": "operator-credentials",
-          "credentials": {
-            "token": operatorToken
-          },
-          "z": ""
+          "x":100,"y":100
         }
       ]
       $("#seed-export").val(JSON.stringify(dnrSeed))
       $( "#seed-dialog" ).dialog( "open" )
-      // alert(JSON.stringify(dnrSeed))
     }
 
     function toggleConstraints(checked) {
@@ -293,7 +283,6 @@
         .on("click", (function(){
           return function(){
             link.selectAll('.link_constraint_group').remove();
-            // delete sourceLink[sourcePort + '_' + target.id]
             delete linkConstraints[source.id + 
                         '_' + sourcePort + '_' + target.id]
             RED.nodes.dirty(true);
@@ -346,20 +335,18 @@
         })())
     }
 
+    // on deploy
     function addLinkConstraintsToData(data){
       var flows = data.flows
       for (var o in flows){
         var obj = flows[o]
 
-        console.log(obj.wires)
         if (!obj.wires){
           continue
         }
 
         for (var i = 0; i< obj.wires.length; i++){
-          console.log(obj.wires[i])
           for (var j = 0; j < obj.wires[i].length; j++){
-            console.log(obj.wires[i][j])
             if (!obj.wires[i][j]){
               continue
             }
@@ -384,9 +371,6 @@
           }
         }
       }
-
-      console.log(data)
-
     }
 
     /*
