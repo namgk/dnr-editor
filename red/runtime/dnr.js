@@ -26,7 +26,7 @@ var webSocketKeepAliveTime = 15000;
 // });
 
 function publish(config, diff, flows){
-  publishWs('deployment', config)
+  // publishWs('deployment', config)
 
   // if (!diff || !diff.changed){
   //   return;
@@ -34,7 +34,7 @@ function publish(config, diff, flows){
 
   // var tobePublished = [];
 
-  // console.log(diff);
+  console.log(diff);
   // console.log('----------------');
   
   // if (config.subflows){
@@ -80,6 +80,20 @@ function init(_server,_runtime) {
   });
 
   start()
+
+  _runtime.adminApi.adminApp.post("/dnr/flows/:id", require("../api").auth.needsPermission("flows.read"), function(req,res) {
+    var deployingFlow = req.params.id;
+    console.log(req.body)
+    publishWs('flow_deployed', {
+      activeFlow: _runtime.nodes.getFlow(deployingFlow),
+      allFlows: _runtime.nodes.getFlows().flows.filter(function(e){
+        return e.type === 'tab'
+      }).map(function(ee){
+        return ee.id
+      })
+    })
+    res.sendStatus(200);
+  });
 }
 
 function start(){

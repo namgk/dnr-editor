@@ -127,6 +127,8 @@
         label: 'Show dnr seed',
         onselect:function() { showDnrSeed()}
       });
+
+      RED.events.on("deploy",flowDeployed);
     }// end init
 
     function showDnrSeed(){
@@ -137,10 +139,16 @@
       var operatorUrl = protocol + "//" + host + (port ? (":"+port) : "")
       var dnrSeed = [
         {
+          "id": "af25fe8d.debf5",
+          "type": "tab",
+          "label": "DNR Seed"
+        },
+        {
           "id":"f14195aa.25e298",
           "operatorUrl": operatorUrl,
           "type": "dnr-daemon",
-          "x":100,"y":100
+          "x":100,"y":100,
+          "z": "af25fe8d.debf5"
         }
       ]
       $("#seed-export").val(JSON.stringify(dnrSeed))
@@ -353,8 +361,6 @@
 
             var link = obj.id + '_' + i + '_' + obj.wires[i][j]
             var linkType = linkConstraints[link]
-            console.log(link)
-            console.log(linkConstraints)
             if (!linkType){
               continue
             }
@@ -371,6 +377,19 @@
           }
         }
       }
+
+    }
+
+    function flowDeployed(){
+      $.ajax({
+        url: "dnr/flows/"+RED.workspaces.active(),
+        type:"POST",
+        success: function(resp) {
+        },
+        error: function(jqXHR,textStatus,errorThrown) {
+          console.log('cannot notify new flow')  
+        }
+      });
     }
 
     /*
