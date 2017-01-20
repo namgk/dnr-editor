@@ -1,10 +1,12 @@
 // var mqtt = require('mqtt');
 // var client = mqtt.connect('mqtt://localhost:1883');
 // var settings = require('./settings.js');
-var connected = false;
-
+var log = require("./log");
 var ws = require("ws");
-var activeConnections = [];
+var util = require("./util");
+
+var connected = false;
+var activeDevices = {'1':1};
 var wsServer;
 
 var server;
@@ -13,52 +15,12 @@ var settings;
 var heartbeatTimer;
 var lastSentTime;
 
-var webSocketKeepAliveTime = 15000;
+var WS_KEEP_ALIVE = 15000;
+var DEVICE_INACTIVE = 30000
 
-
-// client.on('connect', function () {
-//   connected = true;
-//   client.subscribe('dnr-new-flows');
-// });
-
-// client.on('message', function (topic, message) {
-//   console.log('DEBUG new flows available at: ' + message.toString());
-// });
-
+// hooked from flow deployment 
 function publish(config, diff, flows){
-  // publishWs('deployment', config)
-
-  // if (!diff || !diff.changed){
-  //   return;
-  // }
-
-  // var tobePublished = [];
-
-  // console.log('----------------');
-  
-  // if (config.subflows){
-  //   console.log(JSON.stringify(config.subflows));
-  //   console.log('----------------');
-  //   Object.keys(config.subflows).forEach(function(key) {
-  //     var subflow = config.subflows[key];
-  //     tobePublished.push(subflow);
-  //   });
-  // }
-
-  // for (var i = 0; i < diff.changed.length; i++){
-  //   var id = diff.changed[i];
-  //   var changedFlow = flows.getFlow(id);
-  //   if (!changedFlow){
-  //     continue;
-  //   }
-
-  //   tobePublished.push(changedFlow);
-  //   console.log(JSON.stringify(changedFlow));
-  //   console.log('----------------');
-  // }
-
-  // console.log(JSON.stringify(tobePublished));
-  // client.publish('dnr-new-flows', (settings.https ? 'https' : 'http') + '://' + settings.uiHost + ':' + settings.uiPort + '/flows');
+  // TODO: process diff
 }
 
 function init(_server,_runtime) {
@@ -78,11 +40,9 @@ function init(_server,_runtime) {
     perMessageDeflate: false
   });
 
-  start()
-
   _runtime.adminApi.adminApp.post("/dnr/flows/:id", require("../api").auth.needsPermission("flows.read"), function(req,res) {
     var deployingFlow = req.params.id;
-    publishWs('flow_deployed', {
+    broadcast('flow_deployed', {
       activeFlow: _runtime.nodes.getFlow(deployingFlow),
       allFlows: _runtime.nodes.getFlows().flows.filter(function(e){
         return e.type === 'tab'
@@ -92,14 +52,30 @@ function init(_server,_runtime) {
     })
     res.sendStatus(200);
   });
+
+  start()
+}
+
+function getUniqueId(){
+  let connId = util.generateId()
+  if (activeDevices[connId]){
+    return getId()
+  }
+  return connId
 }
 
 function start(){
   wsServer.on('connection',function(ws) {
-    activeConnections.push(ws);
+    let device = 'annonymous'
 
     ws.on('close',function() {
-      removeActiveConnection(ws);
+      log.info(device + ' disconnected')
+      delete activeDevices[device]
+    });
+
+    ws.on('error', function(err) {
+      log.warn( 'dnr comms error: ' + err.toString() );
+      delete activeDevices[device]
     });
 
     ws.on('message', function(data,flags) {
@@ -111,17 +87,30 @@ function start(){
         return;
       }
 
-      try {
-        activeConnections.push(ws);
-        ws.send(JSON.stringify({conn:"ok"}));
-      } catch(err) {
-          // Just in case the socket closes before we attempt
-          // to send anything.
-      }
-    });
+      console.log(msg)
 
-    ws.on('error', function(err) {
-      log.warn( 'dnr comms error: ' + err.toString() );
+      if (msg.topic === 'register'){
+        device = msg.device
+        
+        if (activeDevices[device]){
+          device = getUniqueId()
+          ws.send(JSON.stringify({
+            'topic': 'register_ack', 'idOk': false, 'id': device
+          }))
+        } else {
+          ws.send(JSON.stringify({
+            'topic': 'register_ack', 'idOk': true, 'id': device
+          }))
+        }
+
+        log.info('new device connected - ' + device)
+        activeDevices[device] = {ws:ws}
+      }
+
+      if (msg.topic === 'dnrhb'){
+        activeDevices[msg.device].context = msg.context
+        activeDevices[msg.device].lastSeen = Date.now()
+      }
     });
   });
 
@@ -133,10 +122,10 @@ function start(){
 
   heartbeatTimer = setInterval(function() {
     var now = Date.now();
-    if (now-lastSentTime > webSocketKeepAliveTime) {
-      publishWs("dnrhb",lastSentTime);
+    if (now-lastSentTime > WS_KEEP_ALIVE) {
+      broadcast("dnrhb",lastSentTime);
     }
-  }, webSocketKeepAliveTime);
+  }, WS_KEEP_ALIVE);
 }
 
 function stop() {
@@ -150,12 +139,10 @@ function stop() {
   }
 }
 
-function publishWs(topic,data) {
-  if (server) {
-    lastSentTime = Date.now();
-    activeConnections.forEach(function(conn) {
-        publishTo(conn,topic,data);
-    });
+function broadcast(topic,data) {
+  lastSentTime = Date.now();
+  for (let device in activeDevices){
+    publishTo(activeDevices[device].ws, topic, data)
   }
 }
 
@@ -164,18 +151,8 @@ function publishTo(ws,topic,data) {
   try {
     ws.send(msg);
   } catch(err) {
-    removeActiveConnection(ws);
     log.warn( 'dnr comms error: ' + err.toString() );
   }
-}
-
-function removeActiveConnection(ws) {
-    for (var i=0;i<activeConnections.length;i++) {
-        if (activeConnections[i] === ws) {
-            activeConnections.splice(i,1);
-            break;
-        }
-    }
 }
 
 module.exports = {
