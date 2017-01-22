@@ -15,11 +15,102 @@
  **/
 
  RED.dnr = (function() {
-     var constraints = [];
-     var linkConstraints = {};
+    var constraints = [];
+    var linkConstraints = {};
+
+    // location constraints GUI
+    function mapInit(){
+      var VANCOUVER = {lat: 49.269801, lng: -123.109489}
+      var currentOverlay = null
+      var overlayVisible = false
+
+      var map = new google.maps.Map(document.getElementById('map'), {
+        center: VANCOUVER, 
+        zoom: 13
+      })
+
+      var drawingManager = new google.maps.drawing.DrawingManager({
+        drawingMode: google.maps.drawing.OverlayType.MARKER,
+        drawingControl: true,
+        drawingControlOptions: {
+          position: google.maps.ControlPosition.TOP_CENTER,
+          drawingModes: ['rectangle']
+        }
+      })
+
+      drawingManager.setMap(map)
+
+      google.maps.event.addListener(map, 'click', function(event) {
+        clearOverlay()
+      });
+
+      google.maps.event.addListener(drawingManager, 'overlaycomplete', function(e) {
+        clearOverlay()
+        currentOverlay = e.overlay
+        overlayVisible = true
+      })
+
+      $('#location-constraint').click(function() { 
+        $( "#node-dialog-map" ).dialog( "open" )
+        if (overlayVisible){
+          map.setCenter({
+            lat: currentOverlay.getBounds().getCenter().lat(), 
+            lng: currentOverlay.getBounds().getCenter().lng()})
+        } else {
+          map.setCenter(VANCOUVER)
+        }
+        
+        google.maps.event.trigger(map, 'resize') // to make map visible
+        drawingManager.setDrawingMode(google.maps.drawing.OverlayType.RECTANGLE)
+      });
+
+      $("#node-dialog-map").dialog({
+        title:"Set location constraint",
+        modal: true,
+        autoOpen: false,
+        width: 500,
+        open: function(e) {},
+        close: function(e) {},
+        buttons: 
+        {
+          Set: function (){
+            if (!overlayVisible){
+              $( '#location-constraint' ).val("")
+              $( this ).dialog( "close" );
+              return
+            }
+
+            var bounds = currentOverlay.getBounds();
+            var start = bounds.getNorthEast();
+            var end = bounds.getSouthWest();
+
+            $( '#location-constraint' ).val( 
+              JSON.stringify({
+                ne: [start.lat(), start.lng()],
+                sw: [end.lat(), end.lng()]
+            }));
+            $( this ).dialog( "close" );
+          },
+          Reset: function(){
+            clearOverlay()
+          },
+          Cancel: function() {
+            $( this ).dialog( "close" );
+          }
+        }
+      })
+
+      function clearOverlay(){
+        if (currentOverlay){
+          currentOverlay.setMap(null)
+          overlayVisible = false
+        }
+      }
+    }
 
     function init() {
-      /* node constraints */
+      mapInit()
+
       $('<li><span class="deploy-button-group button-group">'+
         '<a id="btn-constraints" class="deploy-button" href="#"> <span>Node Requirements</span></a>'+
         '<a id="btn-constraints-options" data-toggle="dropdown" class="deploy-button" href="#"><i class="fa fa-caret-down"></i></a>'+
@@ -203,27 +294,23 @@
       }
           
       var deviceId = $( "#device-id" ).val();
-      var geoloc = $( "#geoloc-constraint" ).val();
-      var network = $( "#network-constraint" ).val();
-      var compute = $( "#compute-constraint" ).val();
+      var location = $( "#location-constraint" ).val();
+      var memory = $( "#memory-constraint" ).val();
       var storage = $( "#storage-constraint" ).val();
-      var custom = $( "#custom-constraint" ).val();
+      // var network = $( "#network-constraint" ).val();
+      // var custom = $( "#custom-constraint" ).val();
       
       var creatingConstraint = {
         id:constraintId
       };  
       if (deviceId)
           creatingConstraint['deviceId'] = deviceId;
-      if (geoloc)
-          creatingConstraint['geoloc'] = geoloc;
-      if (network)
-          creatingConstraint['network'] = network;
-      if (compute)
-          creatingConstraint['compute'] = compute;
+      if (location)
+          creatingConstraint['location'] = location;
+      if (memory)
+          creatingConstraint['memory'] = memory;
       if (storage)
           creatingConstraint['storage'] = storage;
-      if (custom)
-          creatingConstraint['custom'] = custom;
 
       addConstraintToGui(creatingConstraint);
 

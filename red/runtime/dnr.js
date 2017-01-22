@@ -6,7 +6,7 @@ var ws = require("ws");
 var util = require("./util");
 
 var connected = false;
-var activeDevices = {'1':1};
+var activeDevices = {};
 var wsServer;
 
 var server;
@@ -50,8 +50,15 @@ function init(_server,_runtime) {
         return ee.id
       })
     })
-    res.sendStatus(200);
-  });
+    res.sendStatus(200)
+  })
+
+  _runtime.adminApi.adminApp.post("/dnr/routingtable", function(req,res) {
+    var input = req.body
+    console.log(input)
+    var response = []
+    res.json(response);
+  })
 
   start()
 }

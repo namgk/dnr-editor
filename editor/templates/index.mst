@@ -115,18 +115,20 @@
     <div class="form-row">
         <label for="constraint-id" ><i class="fa fa-cloud"></i>Constraint Id:</label>
         <input type="text" id="constraint-id">
-        <label for="device-id" ><i class="fa"></i>Device:</label>
+        <label for="device-id" ><i class="fa"></i>Device ID:</label>
         <input type="text" id="device-id" placeholder="device's application scope unique ID">
-        <label for="device-id" ><i class="fa"></i>Geolocation:</label>
-        <input type="text" id="geoloc-constraint" placeholder="lat,long,radius">
-        <label for="device-id" ><i class="fa"></i>Network:</label>
-        <input type="text" id="network-constraint" placeholder="CIDR">
-        <label for="device-id" ><i class="fa"></i>Compute:</label>
-        <input type="text" id="compute-constraint" placeholder="Compute|IO|Edge">
-        <label for="device-id" ><i class="fa"></i>Storage:</label>
-        <input type="text" id="storage-constraint" placeholder="required storage in KB">
-        <label for="device-id" ><i class="fa"></i>Custom:</label>
-        <input type="text" id="custom-constraint" placeholder="custom-defined constraint">
+        <label><i class="fa"></i>Location:</label>
+        <input type="text" id="location-constraint">
+        <label for="memory-constraint"><i class="fa"></i>Min memory (MB):</label>
+        <input type="text" id="memory-constraint" placeholder="500">
+        <label for="storage-constraint"><i class="fa"></i>Min storage (MB):</label>
+        <input type="text" id="storage-constraint" placeholder="1000">
+    </div>
+</div>
+
+<div id="node-dialog-map" 
+    class="hide">
+    <div id="map" style="height: 300px;">
     </div>
 </div>
 
@@ -192,6 +194,9 @@
 <script src="vendor/ace/ace.js"></script>
 <script src="vendor/ace/ext-language_tools.js"></script>
 <script src="{{ asset.red }}"></script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAbExJS6K6Dr6JeN79ZwP9V7fnk7o6Szqs&libraries=drawing"
+         async defer></script>
 
 </body>
 </html>
