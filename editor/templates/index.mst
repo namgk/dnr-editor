@@ -121,8 +121,8 @@
         <input type="text" id="location-constraint">
         <label for="memory-constraint"><i class="fa"></i>Min memory (MB):</label>
         <input type="text" id="memory-constraint" placeholder="500">
-        <label for="storage-constraint"><i class="fa"></i>Min storage (MB):</label>
-        <input type="text" id="storage-constraint" placeholder="1000">
+        <label for="cores-constraint"><i class="fa"></i>Min CPU cores:</label>
+        <input type="text" id="cores-constraint" placeholder="1000">
     </div>
 </div>
 

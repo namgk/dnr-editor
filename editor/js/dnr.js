@@ -117,25 +117,60 @@
         '</span></li>').prependTo(".header-toolbar");
 
       $('#btn-constraints').click(function() { 
-        $( "#node-dialog-new-constraints" ).dialog( "open" ); });
+        $( "#node-dialog-new-constraints" ).dialog( "open" ) })
 
       $("#node-dialog-new-constraints").dialog({
-        title:"Create a node requirement",
         modal: true,
         autoOpen: false,
         width: 500,
         open: function(e) {
-            // RED.keyboard.disable();
+            var constraintId = $('#constraint-id').val()
+            if (!constraintId){
+              $(this).dialog('option', 'title', 'Create a node requirement');
+              $("#createConstraintBtn").text('Create')
+              return
+            }
+
+            // editing existing constraint
+            for (var i = 0; i < constraints.length; i++){
+              if (constraints[i].id === constraintId){
+                var c = constraints[i]
+              }
+            }
+
+            if (!c){
+              return
+            }
+
+            if (c['deviceId']){
+              $( "#device-id" ).val(c['deviceId'])
+            }
+            if (c['location']){
+              $( "#location-constraint" ).val(c['location'])
+            }
+            if (c['memory']){
+              $( "#memory-constraint" ).val(c['memory'])
+            }
+            if (c['cores']){
+              $( "#cores-constraint" ).val(c['cores'])
+            }
+            $(this).dialog('option', 'title', 'Editing existed constraint');
+            $("#createConstraintBtn").text('Save edit')
         },
         close: function(e) {
-            // RED.keyboard.enable();
+          // reset on close
+          resetConstraintsDialog()
         },
+
         buttons: 
         {
-            "Create": createConstraint,
-            Cancel: function() {
-                $( this ).dialog( "close" );
-            }
+          "Create": {
+            id: "createConstraintBtn",
+            click: createConstraint
+          },
+          Cancel: function() {
+            $( this ).dialog( "close" );
+          }
         }
       });
 
@@ -222,6 +257,14 @@
       RED.events.on("deploy",flowDeployed);
     }// end init
 
+    function resetConstraintsDialog(){
+      $( "#constraint-id" ).val("")
+      $( "#device-id" ).val("")
+      $( "#location-constraint" ).val("")
+      $( "#memory-constraint" ).val("")
+      $( "#cores-constraint" ).val("")
+    }
+
     function showDnrSeed(){
       var host = document.location.hostname;
       var port = document.location.port;
@@ -296,7 +339,7 @@
       var deviceId = $( "#device-id" ).val();
       var location = $( "#location-constraint" ).val();
       var memory = $( "#memory-constraint" ).val();
-      var storage = $( "#storage-constraint" ).val();
+      var cores = $( "#cores-constraint" ).val();
       // var network = $( "#network-constraint" ).val();
       // var custom = $( "#custom-constraint" ).val();
       
@@ -309,8 +352,8 @@
           creatingConstraint['location'] = location;
       if (memory)
           creatingConstraint['memory'] = memory;
-      if (storage)
-          creatingConstraint['storage'] = storage;
+      if (cores)
+          creatingConstraint['cores'] = cores;
 
       addConstraintToGui(creatingConstraint);
 
@@ -321,8 +364,9 @@
     function addConstraintToGui(c){
       // check if c id is unique (exist or not)
       for (var i = 0; i < constraints.length; i++){
-        if ((c.id && c.id === constraints[i].id) || 
-            c === constraints[i].id){
+        if (c.id && c.id === constraints[i].id){
+          // updating existing constraint
+          constraints[i] = c
           return
         }
       }  
@@ -335,7 +379,29 @@
       RED.menu.addItem("btn-constraints-options", {
         id:c.id,
         label:c.id,
-        onselect:function(s) { setNodeConstraint(c)}
+        onselect:function(s) { 
+          var nodeSelected = false
+
+          RED.nodes.eachNode(function(node){
+            if (node.selected){
+              nodeSelected = true
+              return
+            }
+          })
+
+          if (!nodeSelected){
+            // no node is selected, allow to edit current constraint
+
+
+            $( "#constraint-id" ).val(c['id'])
+
+            $( "#node-dialog-new-constraints" ).dialog( "open" )
+          } else {
+            // reset these fields to blank
+            resetConstraintsDialog()
+            setNodeConstraint(c)
+          }
+        }
       });
 
     }
@@ -512,8 +578,9 @@
 
       // TODO: either bind constraint to nodes
       RED.nodes.eachNode(function(node){
-        if (!node.selected)
+        if (!node.selected){
           return;
+        }
 
         if (!node['constraints'])
           node['constraints'] = {};
