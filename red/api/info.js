@@ -1,5 +1,5 @@
 /**
- * Copyright 2014, 2016 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,12 +42,12 @@ module.exports = {
         if (settings.flowFilePretty) {
             safeSettings.flowFilePretty = settings.flowFilePretty;
         }
+
         if (!runtime.nodes.paletteEditorEnabled()) {
             safeSettings.editorTheme = safeSettings.editorTheme || {};
             safeSettings.editorTheme.palette = safeSettings.editorTheme.palette || {};
             safeSettings.editorTheme.palette.editable = false;
         }
-
 
         res.json(safeSettings);
     }

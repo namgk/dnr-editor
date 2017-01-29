@@ -44,11 +44,12 @@ For support or questions related to DNR, please contact [@mblackstock](http://tw
 
 ## Original Node-RED
 
-Node-RED is a creation of [IBM Emerging Technology](https://www.ibm.com/blogs/emerging-technology/).
+Node-RED is a project of the [JS Foundation](http://js.foundation).
+
+It was created by [IBM Emerging Technology](https://www.ibm.com/blogs/emerging-technology/).
 
 * Nick O'Leary [@knolleary](http://twitter.com/knolleary)
 * Dave Conway-Jones [@ceejay](http://twitter.com/ceejay)
 
-For more open-source projects from IBM, head over [here](http://ibm.github.io).
 
 DNR is an extension of Node-RED by Mike Blackstock [@mblackstock](http://twitter.com/mblackstock) and Nam Giang <kyng@ece.ubc.ca>

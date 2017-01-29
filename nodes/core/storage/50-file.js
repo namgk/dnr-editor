@@ -1,5 +1,5 @@
 /**
- * Copyright 2013, 2015 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,8 +45,8 @@ module.exports = function(RED) {
                 data = new Buffer(data);
                 if (this.overwriteFile === "true") {
                     // using "binary" not {encoding:"binary"} to be 0.8 compatible for a while
-                    fs.writeFile(filename, data, "binary", function (err) {
-                    //fs.writeFile(filename, data, {encoding:"binary"}, function (err) {
+                    //fs.writeFile(filename, data, "binary", function (err) {
+                    fs.writeFile(filename, data, {encoding:"binary"}, function (err) {
                         if (err) {
                             if ((err.code === "ENOENT") && node.createDir) {
                                 fs.ensureFile(filename, function (err) {
@@ -71,8 +71,8 @@ module.exports = function(RED) {
                 }
                 else {
                     // using "binary" not {encoding:"binary"} to be 0.8 compatible for a while longer
-                    fs.appendFile(filename, data, "binary", function (err) {
-                    //fs.appendFile(filename, data, {encoding:"binary"}, function (err) {
+                    //fs.appendFile(filename, data, "binary", function (err) {
+                    fs.appendFile(filename, data, {encoding:"binary"}, function (err) {
                         if (err) {
                             if ((err.code === "ENOENT") && node.createDir) {
                                 fs.ensureFile(filename, function (err) {

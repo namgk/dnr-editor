@@ -1,5 +1,5 @@
 /**
- * Copyright 2013, 2015 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 
 @import "jquery";
 @import "bootstrap";
+@import "ace";
 
 @import "dropdownMenu";
 
@@ -53,6 +54,7 @@
 
 @import "keyboard";
 
+@import "debug";
 
 body {
     font-size: 14px;
@@ -118,4 +120,8 @@ pre code {
   white-space: pre-wrap;
   background-color: transparent;
   border: 0;
+}
+
+.hide {
+    display: none;
 }

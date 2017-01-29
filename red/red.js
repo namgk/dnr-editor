@@ -1,5 +1,5 @@
 /**
- * Copyright 2013, 2015 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,17 @@ var adminApp = null;
 var server = null;
 var apiEnabled = false;
 
+function checkVersion(userSettings) {
+    var semver = require('semver');
+    if (!semver.satisfies(process.version,">=4.0.0")) {
+        // TODO: in the future, make this a hard error.
+        // var e = new Error("Unsupported version of node.js");
+        // e.code = "unsupported_version";
+        // throw e;
+        userSettings.UNSUPPORTED_VERSION = process.version;
+    }
+}
+
 function checkBuild() {
     var editorFile = path.resolve(path.join(__dirname,"..","public","red","red.min.js"));
     try {
@@ -47,6 +58,7 @@ module.exports = {
         }
 
         if (!userSettings.SKIP_BUILD_CHECK) {
+            checkVersion(userSettings);
             checkBuild();
         }
 
@@ -54,7 +66,7 @@ module.exports = {
             userSettings.coreNodesDir = path.resolve(path.join(__dirname,"..","nodes"));
         }
 
-        if (userSettings.httpAdminRoot !== false || userSettings.httpNodeRoot !== false) {
+        if (userSettings.httpAdminRoot !== false) {
             runtime.init(userSettings,api);
             api.init(httpServer,runtime);
             dnr.init(httpServer,runtime);
@@ -64,7 +76,7 @@ module.exports = {
             apiEnabled = false;
         }
         adminApp = runtime.adminApi.adminApp;
-        nodeApp = runtime.adminApi.nodeApp;
+        nodeApp = runtime.nodeApp;
         server = runtime.adminApi.server;
         return;
     },

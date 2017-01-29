@@ -1,5 +1,5 @@
 /**
- * Copyright 2013, 2016 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 module.exports = function(RED) {
     "use strict";
+    var jsonata = require("jsonata");
 
     function ChangeNode(n) {
         RED.nodes.createNode(this, n);
@@ -85,6 +86,13 @@ module.exports = function(RED) {
                 }
             } else if (rule.tot === 'bool') {
                 rule.to = /^true$/i.test(rule.to);
+            } else if (rule.tot === 'jsonata') {
+                try {
+                    rule.to = jsonata(rule.to);
+                } catch(e) {
+                    valid = false;
+                    this.error(RED._("change.errors.invalid-from",{error:e.message}));
+                }
             }
         }
 
@@ -107,6 +115,8 @@ module.exports = function(RED) {
                     value = node.context().global.get(rule.to);
                 } else if (rule.tot === 'date') {
                     value = Date.now();
+                } else if (rule.tot === 'jsonata') {
+                    value = rule.to.evaluate({msg:msg});
                 }
                 if (rule.t === 'change') {
                     if (rule.fromt === 'msg' || rule.fromt === 'flow' || rule.fromt === 'global') {

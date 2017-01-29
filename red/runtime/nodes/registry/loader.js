@@ -1,5 +1,5 @@
 /**
- * Copyright 2015, 2016 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,9 +83,11 @@ function createNodeApi(node) {
         red.library = runtime.adminApi.library;
         red.auth = runtime.adminApi.auth;
         red.httpAdmin = runtime.adminApi.adminApp;
-        red.httpNode = runtime.adminApi.nodeApp;
+        red.httpNode = runtime.nodeApp;
         red.server = runtime.adminApi.server;
     } else {
+        //TODO: runtime.adminApi is always stubbed if not enabled, so this block
+        // is unused - but may be needed for the unit tests
         red.comms = {
             publish: function() {}
         };

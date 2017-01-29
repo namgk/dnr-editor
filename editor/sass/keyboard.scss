@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,42 @@
 
 #keyboard-help-dialog {
     font-size: 0.9em;
+    padding-top: 10px;
+
 }
-.keyboard-shortcuts {
-    padding: 10px;
+.keyboard-shortcut-entry.keyboard-shortcut-list-header {
+    padding:0 30px 0 5px;
+    div {
+        color: #666 !important;
+    }
 }
-.keyboard-shortcuts td  {
-    padding: 7px 5px;
-    margin-bottom: 10px;
-    white-space: pre;
+#keyboard-shortcut-list {
+    position: absolute;
+    top:30px;
+    left:10px;
+    right:10px;
+    bottom:10px;
 }
-.keyboard-shortcuts td:first-child {
-    text-align: right;
-    padding-right: 10px;
+.keyboard-shortcut-entry {
+    padding: 0px 20px 0 10px;
+    div {
+        display: inline-block;
+    }
 }
+.keyboard-shortcut-entry-key {
+    width:150px;
+}
+.keyboard-shortcut-entry-scope {
+    float: right;
+    color: #999;
+}
+.keyboard-shortcut-entry-unassigned {
+    color: #999;
+    .keyboard-shortcut-entry-key {
+        font-style: italic;
+    }
+}
+
 .help-key {
     border: 1px solid #ddd;
     padding: 4px;
@@ -37,4 +60,6 @@
     font-family: Courier, monospace;
     box-shadow: #999 1px 1px 1px;
 }
-
+.help-key-block {
+    white-space: nowrap;
+}

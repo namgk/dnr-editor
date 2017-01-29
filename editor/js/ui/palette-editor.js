@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -304,10 +304,10 @@ RED.palette.editor = (function() {
             filterInput.focus();
         },250);
         RED.events.emit("palette-editor:open");
-        RED.keyboard.add("*",/* ESCAPE */ 27,function(){hidePaletteEditor();d3.event.preventDefault();});
+        RED.keyboard.add("*","escape",function(){hidePaletteEditor()});
     }
     function hidePaletteEditor() {
-        RED.keyboard.remove("*");
+        RED.keyboard.remove("escape");
         $("#main-container").removeClass("palette-expanded");
         $("#header-shade").hide();
         $("#editor-shade").hide();
@@ -338,36 +338,45 @@ RED.palette.editor = (function() {
     var catalogueCount;
     var catalogueLoadStatus = [];
     var catalogueLoadStart;
+    var catalogueLoadErrors = false;
 
     var activeSort = sortModulesAZ;
 
-    function handleCatalogResponse(catalog,index,v) {
-        catalogueLoadStatus.push(v);
-        if (v.modules) {
-            v.modules.forEach(function(m) {
-                loadedIndex[m.id] = m;
-                m.index = [m.id];
-                if (m.keywords) {
-                    m.index = m.index.concat(m.keywords);
-                }
-                if (m.updated_at) {
-                    m.timestamp = new Date(m.updated_at).getTime();
-                } else {
-                    m.timestamp = 0;
-                }
-                m.index = m.index.join(",").toLowerCase();
-            })
-            loadedList = loadedList.concat(v.modules);
+    function handleCatalogResponse(err,catalog,index,v) {
+        catalogueLoadStatus.push(err||v);
+        if (!err) {
+            if (v.modules) {
+                v.modules.forEach(function(m) {
+                    loadedIndex[m.id] = m;
+                    m.index = [m.id];
+                    if (m.keywords) {
+                        m.index = m.index.concat(m.keywords);
+                    }
+                    if (m.updated_at) {
+                        m.timestamp = new Date(m.updated_at).getTime();
+                    } else {
+                        m.timestamp = 0;
+                    }
+                    m.index = m.index.join(",").toLowerCase();
+                })
+                loadedList = loadedList.concat(v.modules);
+            }
+            searchInput.searchBox('count',loadedList.length);
+        } else {
+            catalogueLoadErrors = true;
         }
-        searchInput.searchBox('count',loadedList.length);
         if (catalogueCount > 1) {
             $(".palette-module-shade-status").html(RED._('palette.editor.loading')+"<br>"+catalogueLoadStatus.length+"/"+catalogueCount);
         }
         if (catalogueLoadStatus.length === catalogueCount) {
+            if (catalogueLoadErrors) {
+                RED.notify(RED._('palette.editor.errors.catalogLoadFailed',{url: catalog}),"error",false,8000);
+            }
             var delta = 250-(Date.now() - catalogueLoadStart);
             setTimeout(function() {
                 $("#palette-module-install-shade").hide();
             },Math.max(delta,0));
+
         }
     }
 
@@ -379,6 +388,7 @@ RED.palette.editor = (function() {
             $(".palette-module-shade-status").html(RED._('palette.editor.loading'));
             var catalogues = RED.settings.theme('palette.catalogues')||['https://catalogue.nodered.org/catalogue.json'];
             catalogueLoadStatus = [];
+            catalogueLoadErrors = false;
             catalogueCount = catalogues.length;
             if (catalogues.length > 1) {
                 $(".palette-module-shade-status").html(RED._('palette.editor.loading')+"<br>0/"+catalogues.length);
@@ -387,8 +397,10 @@ RED.palette.editor = (function() {
             catalogueLoadStart = Date.now();
             catalogues.forEach(function(catalog,index) {
                 $.getJSON(catalog, {_: new Date().getTime()},function(v) {
-                    handleCatalogResponse(catalog,index,v);
+                    handleCatalogResponse(null,catalog,index,v);
                     refreshNodeModuleList();
+                }).fail(function(jqxhr, textStatus, error) {
+                    handleCatalogResponse(jqxhr,catalog,index);
                 })
             });
         }
@@ -424,8 +436,10 @@ RED.palette.editor = (function() {
         RED.events.on("editor:close",function() { disabled = false; });
         RED.events.on("search:open",function() { disabled = true; });
         RED.events.on("search:close",function() { disabled = false; });
+        RED.events.on("type-search:open",function() { disabled = true; });
+        RED.events.on("type-search:close",function() { disabled = false; });
 
-        RED.keyboard.add("*", /* p */ 80,{shift:true,ctrl:true},function() {RED.palette.editor.show();d3.event.preventDefault();});
+        RED.actions.add("core:manage-palette",RED.palette.editor.show);
 
         editorTabs = RED.tabs.create({
             id:"palette-editor-tabs",
@@ -516,10 +530,15 @@ RED.palette.editor = (function() {
                     var removeButton = $('<a href="#" class="editor-button editor-button-small"></a>').html(RED._('palette.editor.remove')).appendTo(buttonGroup);
                     removeButton.click(function(evt) {
                         evt.preventDefault();
-                        shade.show();
-                        removeNodeModule(entry.name, function(xhr) {
-                            console.log(xhr);
-                        })
+
+                        $("#palette-module-install-confirm").data('module',entry.name);
+                        $("#palette-module-install-confirm").data('shade',shade);
+                        $("#palette-module-install-confirm-body").html(RED._("palette.editor.confirm.remove.body"));
+                        $(".palette-module-install-confirm-button-install").hide();
+                        $(".palette-module-install-confirm-button-remove").show();
+                        $("#palette-module-install-confirm")
+                            .dialog('option', 'title', RED._("palette.editor.confirm.remove.title"))
+                            .dialog('open');
                     })
                     if (!entry.local) {
                         removeButton.hide();
@@ -631,7 +650,7 @@ RED.palette.editor = (function() {
 
 
         $('<span>').html(RED._("palette.editor.sort")+' ').appendTo(toolBar);
-        var sortGroup = $('<span class="button-group"></span> ').appendTo(toolBar);
+        var sortGroup = $('<span class="button-group"></span>').appendTo(toolBar);
         var sortAZ = $('<a href="#" class="sidebar-header-button-toggle selected" data-i18n="palette.editor.sortAZ"></a>').appendTo(sortGroup);
         var sortRecent = $('<a href="#" class="sidebar-header-button-toggle" data-i18n="palette.editor.sortRecent"></a>').appendTo(sortGroup);
 
@@ -668,69 +687,131 @@ RED.palette.editor = (function() {
         })
 
         packageList = $('<ol>',{style:"position: absolute;top: 78px;bottom: 0;left: 0;right: 0px;"}).appendTo(installTab).editableList({
-           addButton: false,
-           scrollOnAdd: false,
-           addItem: function(container,i,object) {
+            addButton: false,
+            scrollOnAdd: false,
+            addItem: function(container,i,object) {
 
-               if (object.more) {
-                   container.addClass('palette-module-more');
-                   var moreRow = $('<div>',{class:"palette-module-header palette-module"}).appendTo(container);
-                   var moreLink = $('<a href="#"></a>').html(RED._('palette.editor.more',{count:object.more})).appendTo(moreRow);
-                   moreLink.click(function(e) {
-                       e.preventDefault();
-                       packageList.editableList('removeItem',object);
-                       for (var i=object.start;i<Math.min(object.start+10,object.start+object.more);i++) {
-                           packageList.editableList('addItem',filteredList[i]);
-                       }
-                       if (object.more > 10) {
-                           packageList.editableList('addItem',{start:object.start+10, more:object.more-10})
-                       }
-                   })
-                   return;
-               }
-               if (object.info) {
-                   var entry = object.info;
-                   var headerRow = $('<div>',{class:"palette-module-header"}).appendTo(container);
-                   var titleRow = $('<div class="palette-module-meta"><i class="fa fa-cube"></i></div>').appendTo(headerRow);
-                   $('<span>',{class:"palette-module-name"}).html(entry.name||entry.id).appendTo(titleRow);
-                   $('<a target="_blank" class="palette-module-link"><i class="fa fa-external-link"></i></a>').attr('href',entry.url).appendTo(titleRow);
-                   var descRow = $('<div class="palette-module-meta"></div>').appendTo(headerRow);
-                   $('<div>',{class:"palette-module-description"}).html(entry.description).appendTo(descRow);
+                if (object.more) {
+                    container.addClass('palette-module-more');
+                    var moreRow = $('<div>',{class:"palette-module-header palette-module"}).appendTo(container);
+                    var moreLink = $('<a href="#"></a>').html(RED._('palette.editor.more',{count:object.more})).appendTo(moreRow);
+                    moreLink.click(function(e) {
+                        e.preventDefault();
+                        packageList.editableList('removeItem',object);
+                        for (var i=object.start;i<Math.min(object.start+10,object.start+object.more);i++) {
+                            packageList.editableList('addItem',filteredList[i]);
+                        }
+                        if (object.more > 10) {
+                            packageList.editableList('addItem',{start:object.start+10, more:object.more-10})
+                        }
+                    })
+                    return;
+                }
+                if (object.info) {
+                    var entry = object.info;
+                    var headerRow = $('<div>',{class:"palette-module-header"}).appendTo(container);
+                    var titleRow = $('<div class="palette-module-meta"><i class="fa fa-cube"></i></div>').appendTo(headerRow);
+                    $('<span>',{class:"palette-module-name"}).html(entry.name||entry.id).appendTo(titleRow);
+                    $('<a target="_blank" class="palette-module-link"><i class="fa fa-external-link"></i></a>').attr('href',entry.url).appendTo(titleRow);
+                    var descRow = $('<div class="palette-module-meta"></div>').appendTo(headerRow);
+                    $('<div>',{class:"palette-module-description"}).html(entry.description).appendTo(descRow);
 
-                   var metaRow = $('<div class="palette-module-meta"></div>').appendTo(headerRow);
-                   $('<span class="palette-module-version"><i class="fa fa-tag"></i> '+entry.version+'</span>').appendTo(metaRow);
-                   $('<span class="palette-module-updated"><i class="fa fa-calendar"></i> '+formatUpdatedAt(entry.updated_at)+'</span>').appendTo(metaRow);
-                   var buttonRow = $('<div>',{class:"palette-module-meta"}).appendTo(headerRow);
-                   var buttonGroup = $('<div>',{class:"palette-module-button-group"}).appendTo(buttonRow);
-                   var shade = $('<div class="palette-module-shade hide"><img src="red/images/spin.svg" class="palette-spinner"/></div>').appendTo(container);
-                   var installButton = $('<a href="#" class="editor-button editor-button-small"></a>').html(RED._('palette.editor.install')).appendTo(buttonGroup);
-                   installButton.click(function(e) {
-                       e.preventDefault();
-                       if (!$(this).hasClass('disabled')) {
-                           installNodeModule(entry.id,shade,function(xhr) {
-                               if (xhr) {
-                                   if (xhr.responseJSON) {
-                                       RED.notify(RED._('palette.editor.errors.installFailed',{module: entry.id,message:xhr.responseJSON.message}));
-                                   }
-                               }
-                           })
-                       }
-                   })
-                   if (nodeEntries.hasOwnProperty(entry.id)) {
-                       installButton.addClass('disabled');
-                       installButton.html(RED._('palette.editor.installed'));
-                   }
+                    var metaRow = $('<div class="palette-module-meta"></div>').appendTo(headerRow);
+                    $('<span class="palette-module-version"><i class="fa fa-tag"></i> '+entry.version+'</span>').appendTo(metaRow);
+                    $('<span class="palette-module-updated"><i class="fa fa-calendar"></i> '+formatUpdatedAt(entry.updated_at)+'</span>').appendTo(metaRow);
+                    var buttonRow = $('<div>',{class:"palette-module-meta"}).appendTo(headerRow);
+                    var buttonGroup = $('<div>',{class:"palette-module-button-group"}).appendTo(buttonRow);
+                    var shade = $('<div class="palette-module-shade hide"><img src="red/images/spin.svg" class="palette-spinner"/></div>').appendTo(container);
+                    var installButton = $('<a href="#" class="editor-button editor-button-small"></a>').html(RED._('palette.editor.install')).appendTo(buttonGroup);
+                    installButton.click(function(e) {
+                        e.preventDefault();
+                        if (!$(this).hasClass('disabled')) {
+                            $("#palette-module-install-confirm").data('module',entry.id);
+                            $("#palette-module-install-confirm").data('url',entry.url);
+                            $("#palette-module-install-confirm").data('shade',shade);
+                            $("#palette-module-install-confirm-body").html(RED._("palette.editor.confirm.install.body"));
+                            $(".palette-module-install-confirm-button-install").show();
+                            $(".palette-module-install-confirm-button-remove").hide();
+                            $("#palette-module-install-confirm")
+                                .dialog('option', 'title', RED._("palette.editor.confirm.install.title"))
+                                .dialog('open');
+                        }
+                    })
+                    if (nodeEntries.hasOwnProperty(entry.id)) {
+                        installButton.addClass('disabled');
+                        installButton.html(RED._('palette.editor.installed'));
+                    }
 
-                   object.elements = {
-                       installButton:installButton
-                   }
-               } else {
-                   $('<div>',{class:"red-ui-search-empty"}).html(RED._('search.empty')).appendTo(container);
-               }
-           }
-       });
+                    object.elements = {
+                        installButton:installButton
+                    }
+                } else {
+                    $('<div>',{class:"red-ui-search-empty"}).html(RED._('search.empty')).appendTo(container);
+                }
+            }
+        });
 
-       $('<div id="palette-module-install-shade" class="palette-module-shade hide"><div class="palette-module-shade-status"></div><img src="red/images/spin.svg" class="palette-spinner"/></div>').appendTo(installTab);
+        $('<div id="palette-module-install-shade" class="palette-module-shade hide"><div class="palette-module-shade-status"></div><img src="red/images/spin.svg" class="palette-spinner"/></div>').appendTo(installTab);
+
+        $('<div id="palette-module-install-confirm" class="hide"><form class="form-horizontal"><div id="palette-module-install-confirm-body" class="node-dialog-confirm-row"></div></form></div>').appendTo(document.body);
+        $("#palette-module-install-confirm").dialog({
+            title: RED._('palette.editor.confirm.title'),
+            modal: true,
+            autoOpen: false,
+            width: 550,
+            height: "auto",
+            buttons: [
+                {
+                    text: RED._("common.label.cancel"),
+                    click: function() {
+                        $( this ).dialog( "close" );
+                    }
+                },
+                {
+                    text: RED._("palette.editor.confirm.button.review"),
+                    class: "primary palette-module-install-confirm-button-install",
+                    click: function() {
+                        var url = $(this).data('url');
+                        window.open(url);
+                    }
+                },
+                {
+                    text: RED._("palette.editor.confirm.button.install"),
+                    class: "primary palette-module-install-confirm-button-install",
+                    click: function() {
+                        var id = $(this).data('module');
+                        var shade = $(this).data('shade');
+                        installNodeModule(id,shade,function(xhr) {
+                             if (xhr) {
+                                 if (xhr.responseJSON) {
+                                     RED.notify(RED._('palette.editor.errors.installFailed',{module: id,message:xhr.responseJSON.message}));
+                                 }
+                             }
+                        });
+                        $( this ).dialog( "close" );
+                    }
+                },
+                {
+                    text: RED._("palette.editor.confirm.button.remove"),
+                    class: "primary palette-module-install-confirm-button-remove",
+                    click: function() {
+                        var id = $(this).data('module');
+                        var shade = $(this).data('shade');
+                        shade.show();
+                        removeNodeModule(id, function(xhr) {
+                            shade.hide();
+                            if (xhr) {
+                                if (xhr.responseJSON) {
+                                    RED.notify(RED._('palette.editor.errors.removeFailed',{module: id,message:xhr.responseJSON.message}));
+                                }
+                            }
+                        })
+
+                        $( this ).dialog( "close" );
+                    }
+                }
+            ]
+        })
 
         RED.events.on('registry:node-set-enabled', function(ns) {
             refreshNodeModule(ns.module);
@@ -754,7 +835,9 @@ RED.palette.editor = (function() {
             refreshNodeModule(ns.module);
             for (var i=0;i<filteredList.length;i++) {
                 if (filteredList[i].info.id === ns.module) {
-                    filteredList[i].elements.installButton.hide();
+                    var installButton = filteredList[i].elements.installButton;
+                    installButton.addClass('disabled');
+                    installButton.html(RED._('palette.editor.installed'));
                     break;
                 }
             }
@@ -768,7 +851,9 @@ RED.palette.editor = (function() {
                     delete nodeEntries[ns.module];
                     for (var i=0;i<filteredList.length;i++) {
                         if (filteredList[i].info.id === ns.module) {
-                            filteredList[i].elements.installButton.show();
+                            var installButton = filteredList[i].elements.installButton;
+                            installButton.removeClass('disabled');
+                            installButton.html(RED._('palette.editor.install'));
                             break;
                         }
                     }

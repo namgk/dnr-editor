@@ -1,5 +1,5 @@
 /**
- * Copyright 2015, 2016 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -170,6 +170,9 @@ RED.workspaces = (function() {
         createWorkspaceTabs();
         RED.events.on("sidebar:resize",workspace_tabs.resize);
 
+        RED.actions.add("core:show-next-tab",workspace_tabs.nextTab);
+        RED.actions.add("core:show-previous-tab",workspace_tabs.previousTab);
+
         RED.menu.setAction('menu-item-workspace-delete',function() {
             deleteWorkspace(RED.nodes.workspace(activeWorkspace));
         });
@@ -177,6 +180,14 @@ RED.workspaces = (function() {
         $(window).resize(function() {
             workspace_tabs.resize();
         });
+
+        RED.actions.add("core:add-flow",addWorkspace);
+        RED.actions.add("core:edit-flow",editWorkspace);
+        RED.actions.add("core:remove-flow",removeWorkspace);
+    }
+
+    function editWorkspace(id) {
+        showRenameWorkspaceDialog(id||activeWorkspace);
     }
 
     function removeWorkspace(ws) {
@@ -201,9 +212,7 @@ RED.workspaces = (function() {
         add: addWorkspace,
         remove: removeWorkspace,
         order: setWorkspaceOrder,
-        edit: function(id) {
-            showRenameWorkspaceDialog(id||activeWorkspace);
-        },
+        edit: editWorkspace,
         contains: function(id) {
             return workspace_tabs.contains(id);
         },

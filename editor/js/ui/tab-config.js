@@ -1,5 +1,5 @@
 /**
- * Copyright 2013, 2016 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,7 +113,7 @@ RED.sidebar.config = (function() {
         if (showUnusedOnly) {
             var hiddenCount = nodes.length;
             nodes = nodes.filter(function(n) {
-                return n.users.length === 0;
+                return n._def.hasUsers!==false && n.users.length === 0;
             })
             hiddenCount = hiddenCount - nodes.length;
             if (hiddenCount > 0) {
@@ -151,10 +151,11 @@ RED.sidebar.config = (function() {
 
                 var entry = $('<li class="palette_node config_node palette_node_id_'+node.id.replace(/\./g,"-")+'"></li>').appendTo(list);
                 $('<div class="palette_label"></div>').text(label).appendTo(entry);
-
-                var iconContainer = $('<div/>',{class:"palette_icon_container  palette_icon_container_right"}).text(node.users.length).appendTo(entry);
-                if (node.users.length === 0) {
-                    entry.addClass("config_node_unused");
+                if (node._def.hasUsers !== false) {
+                    var iconContainer = $('<div/>',{class:"palette_icon_container  palette_icon_container_right"}).text(node.users.length).appendTo(entry);
+                    if (node.users.length === 0) {
+                        entry.addClass("config_node_unused");
+                    }
                 }
                 entry.on('click',function(e) {
                     RED.sidebar.info.refresh(node);
@@ -236,10 +237,7 @@ RED.sidebar.config = (function() {
             visible: false,
             onchange: function() { refreshConfigNodeList(); }
         });
-
-        RED.menu.setAction('menu-item-config-nodes',function() {
-            RED.sidebar.show('config');
-        })
+        RED.actions.add("core:show-config-tab",function() {RED.sidebar.show('config')});
 
         $("#workspace-config-node-collapse-all").on("click", function(e) {
             e.preventDefault();

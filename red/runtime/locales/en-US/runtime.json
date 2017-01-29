@@ -2,6 +2,7 @@
     "runtime": {
         "welcome": "Welcome to Node-RED",
         "version": "__component__ version: __version__",
+        "unsupported_version": "Unsupported version of __component__. Requires: __requires__ Found: __version__",
         "paths": {
             "settings": "Settings file  : __path__"
         }
@@ -27,7 +28,7 @@
             "installed": "Installed module: __name__",
             "install-failed": "Install failed",
             "install-failed-long": "Installation of module __name__ failed:",
-            "install-failed-not-found": "$t(install-failed-long) module not found",
+            "install-failed-not-found": "$t(server.install.install-failed-long) module not found",
 
             "uninstalling": "Uninstalling module: __name__",
             "uninstall-failed": "Uninstall failed",

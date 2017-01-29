@@ -1,5 +1,5 @@
 <!--
-  Copyright 2013, 2016 IBM Corp.
+  Copyright JS Foundation and other contributors, http://js.foundation
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -175,22 +175,7 @@
         defaults: {
             name: {value:""},
             topic: {value:""},
-            payload: {value:"", validate:function(v) {
-                var ptype = $("#node-input-payloadType").val() || this.payloadType;
-                if (ptype === 'json') {
-                    try {
-                        JSON.parse(v);
-                        return true;
-                    } catch(err) {
-                        return false;
-                    }
-                } else if (ptype === 'flow' || ptype === 'global' ) {
-                    return /^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]+)*/i.test(v);
-                } else if (ptype === 'num') {
-                    return /^[+-]?[0-9]*\.?[0-9]*([eE][-+]?[0-9]+)?$/.test(v);
-                }
-                return true;
-            }},
+            payload: {value:"", validate: RED.validators.typedInput("payloadType")},
             payloadType: {value:"date"},
             repeat: {value:""},
             crontab: {value:""},

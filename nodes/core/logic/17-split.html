@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  Copyright 2016 IBM Corp.
+  Copyright JS Foundation and other contributors, http://js.foundation
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -162,7 +162,7 @@
             name: {value:""},
             mode: {value:"auto"},
             build: { value:"string"},
-            property: { value: "payload"},
+            property: { value: "payload", validate: RED.validators.typedInput("propertyType")},
             propertyType: { value:"msg"},
             key: {value:"topic"},
             joiner: { value:"\\n"},

@@ -53,7 +53,8 @@
             "keyboardShortcuts": "Keyboard shortcuts",
             "login": "Login",
             "logout": "Logout",
-            "editPalette":"Manage palette"
+            "editPalette":"Manage palette",
+            "showTips": "Show tips"
         }
     },
     "user": {
@@ -66,7 +67,8 @@
         "warning": "<strong>Warning</strong>: __message__",
         "warnings": {
             "undeployedChanges": "node has undeployed changes",
-            "nodeActionDisabled": "node actions disabled within subflow"
+            "nodeActionDisabled": "node actions disabled within subflow",
+            "missing-types": "Flows stopped due to missing node types. Check logs for details."
         },
 
         "error": "<strong>Error</strong>: __message__",
@@ -75,7 +77,8 @@
             "lostConnectionReconnect": "Lost connection to server, reconnecting in __time__s.",
             "lostConnectionTry": "Try now",
             "cannotAddSubflowToItself": "Cannot add subflow to itself",
-            "cannotAddCircularReference": "Cannot add subflow - circular reference detected"
+            "cannotAddCircularReference": "Cannot add subflow - circular reference detected",
+            "unsupportedVersion": "Using an unsupported version of Node.js<br/>You should upgrade to the latest Node.js LTS release"
         }
     },
     "clipboard": {
@@ -129,8 +132,30 @@
             "improperlyConfigured": "The workspace contains some nodes that are not properly configured:",
             "unknown": "The workspace contains some unknown node types:",
             "confirm": "Are you sure you want to deploy?",
-            "conflict": "The server is running a more recent set of flows."
+            "conflict": "The server is running a more recent set of flows.",
+            "conflictChecking": "Checking to see if the changes can be merged automatically",
+            "conflictAutoMerge": "The changes include no conflicts and can be merged automatically.",
+            "conflictManualMerge": "The changes include conflicts that must be resolved before they can be deployed."
         }
+    },
+    "diff": {
+        "unresolvedCount": "__count__ unresolved conflict",
+        "unresolvedCount_plural": "__count__ unresolved conflicts",
+        "type": {
+            "added": "added",
+            "changed": "changed",
+            "unchanged": "unchanged",
+            "deleted": "deleted",
+            "flowDeleted": "flow deleted",
+            "flowAdded": "flow added",
+            "movedTo": "moved to __id__",
+            "movedFrom": "moved from __id__"
+        },
+        "nodeCount": "__count__ node",
+        "nodeCount_plural": "__count__ nodes",
+        "local":"Local",
+        "remote":"Remote"
+
     },
     "subflow": {
         "editSubflow": "Edit flow template: __name__",
@@ -164,16 +189,18 @@
         }
     },
     "keyboard": {
+        "title": "Keyboard Shortcuts",
+        "unassigned": "Unassigned",
         "selectAll": "Select all nodes",
         "selectAllConnected": "Select all connected nodes",
         "addRemoveNode": "Add/remove node from selection",
+        "editSelected": "Edit selected node",
         "deleteSelected": "Delete selected nodes or link",
         "importNode": "Import nodes",
         "exportNode": "Export nodes",
-        "nudgeNode": "Move selected node(s) by a small amount",
-        "moveNode": "Move selected node(s) by a large amount",
+        "nudgeNode": "Move selected nodes (1px)",
+        "moveNode": "Move selected nodes (20px)",
         "toggleSidebar": "Toggle sidebar",
-        "deleteNode": "Delete selected nodes or link",
         "copyNode": "Copy selected nodes",
         "cutNode": "Cut selected nodes",
         "pasteNode": "Paste nodes",
@@ -186,7 +213,6 @@
         "saveToLibrary": "Save to Library...",
         "typeLibrary": "__type__ library",
         "unnamedType": "Unnamed __type__",
-        "saveToLibrary": "Save to Library",
         "exportToLibrary": "Export nodes to library",
         "dialogSaveOverwrite": "A __libraryType__ called __libraryName__ already exists. Overwrite?",
         "invalidFilename": "Invalid filename",
@@ -267,7 +293,24 @@
             "sortRecent": "recent",
             "more": "+ __count__ more",
             "errors": {
-                "installFailed": "Failed to install: __module__<br>__message__<br>Check the log for more information"
+                "catalogLoadFailed": "Failed to load node catalogue.<br>Check the browser console for more information",
+                "installFailed": "Failed to install: __module__<br>__message__<br>Check the log for more information",
+                "removeFailed": "Failed to remove: __module__<br>__message__<br>Check the log for more information"
+            },
+            "confirm": {
+                "install": {
+                    "body":"Before installing, please read the node's documentation. Some nodes have dependencies that cannot be automatically resolved and can require a restart of Node-RED. ",
+                    "title": "Install nodes"
+                },
+                "remove": {
+                    "body":"Removing the node will uninstall it from Node-RED. The node may continue to use resources until Node-RED is restarted.",
+                    "title": "Remove nodes"
+                },
+                "button": {
+                    "review": "Open node information",
+                    "install": "Install",
+                    "remove": "Remove"
+                }
             }
 
         }
@@ -316,6 +359,11 @@
         "add": "add"
     },
     "search": {
-        "empty": "No matches found"
+        "empty": "No matches found",
+        "addNode": "add a node..."
+    },
+    "expressionEditor": {
+        "functions": "Functions",
+        "insert": "Insert"
     }
 }

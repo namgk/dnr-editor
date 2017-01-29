@@ -6,7 +6,8 @@ var ws = require("ws");
 var util = require("./util");
 
 var connected = false;
-var activeDevices = {};
+var activeDevices = {}; // deviceId --> ws, context, lastSeen
+var availableNodes = {} // nodeId --> [deviceId]
 var wsServer;
 
 var server;
@@ -17,6 +18,10 @@ var lastSentTime;
 
 var WS_KEEP_ALIVE = 15000;
 var DEVICE_INACTIVE = 30000
+
+var dnrInterface = require('dnr-interface')
+var RoutingTableReq = dnrInterface.RoutingTableReq
+var RoutingTableRes = dnrInterface.RoutingTableRes
 
 // hooked from flow deployment 
 function publish(config, diff, flows){
@@ -54,9 +59,99 @@ function init(_server,_runtime) {
   })
 
   _runtime.adminApi.adminApp.post("/dnr/routingtable", function(req,res) {
-    var input = req.body
-    console.log(input)
-    var response = []
+    console.log(req.body)
+
+    /* RoutingTableReq: 
+      { 
+        deviceId: '1',
+        flowId: 'xxx'
+        dnrLinks: [ 
+          '54236bf5.2703a4_0_1d58c765.938219-<linkState>',
+          '1d58c765.938219_0_6cd77d5e.6c54b4-<linkState>' 
+        ] 
+      }
+    */
+    var routingTableReq = new RoutingTableReq().fromObj(req.body)
+    let deviceId = routingTableReq.deviceId
+    let flowId = routingTableReq.flowId
+    let dnrLinks = routingTableReq.dnrLinks
+
+    let flow = _runtime.nodes.getFlow(flowId)
+
+    var response = new RoutingTableRes()
+
+    for (let dnrLink of dnrLinks){
+      let link = dnrLink.split('-')[0]
+      let linkState = dnrLink.split('-')[1]
+      let linkType
+      
+      let sourceId = link.split('_')[0]
+      let sourcePort = link.split('_')[1]
+      let destId = link.split('_')[2]
+
+      // based on this flow
+      console.log(flow)
+      for (let node of flow.nodes){
+        if (node.id !== sourceId){
+          continue
+        }
+
+        let linkConstraints = node.constraints.link
+        linkType = linkConstraints[sourcePort + '_' + destId]
+      }
+
+      let commTopic
+      // notes, there are several cases where daemons don't need to ask
+      // for where they should send/fetch data to/from
+      // e.g 
+      //    if the link type is NN, the topic for pub/sub is 
+      // always <srcId>_<srcPort>_<destId>
+      //    if the link type is 1N and the dnrNode status is RECEIVE_REDIRECT,
+      // the topic for publishing is always 
+      //    "from_<myself>_<srcId>_<srcPort>_<destId>"
+      //    similarly, if the link type is N1 and status is FETCH_FORWARD,
+      // the topic for subscribing is always
+      //    "to_<myself>_<srcId>_<srcPort>_<destId>"
+
+      if (linkState === dnrInterface.Context.FETCH_FORWARD){
+        // finding which device to fetch from
+        // subcribing topic will be
+        switch (linkType){
+          case '11':
+            // "from_<deviceId>_to_deviceId_<srcId>_<srcPort>_<destId>"
+            break
+          case '1N':
+            // "from_<deviceId>_<srcId>_<srcPort>_<destId>"
+            break
+          default:
+            break
+        }
+
+      } else if (linkState === dnrInterface.Context.RECEIVE_REDIRECT){
+        // finding which device to redirect to
+        // publishing topic will be
+        switch (linkType){
+          case '11':
+            // "from_deviceId_to_<deviceId>_<srcId>_<srcPort>_<destId>"
+            break
+          case 'N1':
+            // "to_<deviceId>_<srcId>_<srcPort>_<destId>"
+            break
+          default:
+            break
+        }
+      }
+
+      if (commTopic){
+        response.set(link, commTopic)
+      }
+    }
+
+    /* response should look like:
+      { 
+        <link> : <topic>
+      }
+    */
     res.json(response);
   })
 

@@ -1,5 +1,5 @@
 /**
- * Copyright 2013, 2016 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,11 +51,17 @@ RED.notify = (function() {
 
         n.update = (function() {
             var nn = n;
-            return function(msg) {
+            return function(msg,timeout) {
                 nn.innerHTML = msg;
+                if (timeout !== undefined && timeout > 0) {
+                    window.clearTimeout(nn.timeoutid);
+                    nn.timeoutid = window.setTimeout(nn.close,timeout);
+                } else {
+                    window.clearTimeout(nn.timeoutid);
+                }
             }
         })();
-        
+
         if (!fixed) {
             $(n).click((function() {
                 var nn = n;

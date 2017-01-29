@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -170,6 +170,11 @@
     stroke-dasharray:8, 3;
 }
 
+
+.node_quickadd * {
+    stroke-dasharray: 12,3;
+}
+
 .node_status_label {
     @include disable-selection;
     stroke-width: 0;
@@ -183,6 +188,13 @@
     stroke: $port-selected-color;
     fill:  $port-selected-color;
 }
+
+.port_quick_link {
+    stroke: $port-selected-color;
+    fill:  $port-selected-color;
+}
+
+
 .subflowport {
     stroke-dasharray: 5,5;
     fill: #eee;

@@ -1,5 +1,5 @@
 /**
- * Copyright 2013, 2015 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -202,12 +202,18 @@ RED.sidebar = (function() {
     }
 
     function init () {
-        RED.keyboard.add("*",/* SPACE */ 32,{ctrl:true},function(){RED.menu.setSelected("menu-item-sidebar",!RED.menu.isSelected("menu-item-sidebar"));d3.event.preventDefault();});
+        RED.actions.add("core:toggle-sidebar",function(state){
+            if (state === undefined) {
+                RED.menu.toggleSelected("menu-item-sidebar");
+            } else {
+                toggleSidebar(state);
+            }
+        });
         showSidebar();
         RED.sidebar.info.init();
         RED.sidebar.config.init();
         // hide info bar at start if screen rather narrow...
-        if ($(window).width() < 600) { toggleSidebar(); }
+        if ($(window).width() < 600) { RED.menu.setSelected("menu-item-sidebar",false); }
     }
 
     return {

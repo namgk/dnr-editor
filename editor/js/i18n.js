@@ -1,5 +1,5 @@
 /**
- * Copyright 2013, 2015 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ RED.i18n = (function() {
                 dynamicLoad: false,
                 load:'current',
                 ns: {
-                    namespaces: ["editor","node-red"],
+                    namespaces: ["editor","node-red","jsonata","infotips"],
                     defaultNs: "editor"
                 },
                 fallbackLng: ['en-US'],

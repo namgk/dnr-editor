@@ -1,5 +1,5 @@
 /**
- * Copyright 2014, 2015 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,7 @@ function init(runtime) {
                     log.info(log._("nodes.flows.registered-missing", {type:type}));
                     activeFlowConfig.missingTypes.splice(i,1);
                     if (activeFlowConfig.missingTypes.length === 0 && started) {
+                        events.emit("runtime-event",{id:"runtime-state"});
                         start();
                     }
                 }
@@ -70,6 +71,7 @@ function init(runtime) {
 
 function loadFlows() {
     return storage.getFlows().then(function(config) {
+        log.debug("loaded flow revision: "+config.rev);
         return credentials.load(config.credentials).then(function() {
             return config;
         });
@@ -94,8 +96,9 @@ function setFlows(_config,type,muteLog) {
     var config = null;
     var diff;
     var newFlowConfig;
-
+    var isLoad = false;
     if (type === "load") {
+        isLoad = true;
         configSavePromise = loadFlows().then(function(_config) {
             config = clone(_config.flows);
             newFlowConfig = flowUtil.parseConfig(clone(config));
@@ -123,6 +126,9 @@ function setFlows(_config,type,muteLog) {
 
     return configSavePromise
         .then(function(flowRevision) {
+            if (!isLoad) {
+                log.debug("saved flow revision: "+flowRevision);
+            }
             activeConfig = {
                 flows:config,
                 rev:flowRevision
@@ -170,9 +176,9 @@ function getFlows() {
 function delegateError(node,logMessage,msg) {
     if (activeFlows[node.z]) {
         activeFlows[node.z].handleError(node,logMessage,msg);
-    } else if (activeNodesToFlow[node.z]) {
+    } else if (activeNodesToFlow[node.z] && activeFlows[activeNodesToFlow[node.z]]) {
         activeFlows[activeNodesToFlow[node.z]].handleError(node,logMessage,msg);
-    } else if (activeFlowConfig.subflows[node.z]) {
+    } else if (activeFlowConfig.subflows[node.z] && subflowInstanceNodeMap[node.id]) {
         subflowInstanceNodeMap[node.id].forEach(function(n) {
             delegateError(getNode(n),logMessage,msg);
         });
@@ -194,7 +200,7 @@ function handleError(node,logMessage,msg) {
 function delegateStatus(node,statusMessage) {
     if (activeFlows[node.z]) {
         activeFlows[node.z].handleStatus(node,statusMessage);
-    } else if (activeNodesToFlow[node.z]) {
+    } else if (activeNodesToFlow[node.z] && activeFlows[activeNodesToFlow[node.z]]) {
         activeFlows[activeNodesToFlow[node.z]].handleStatus(node,statusMessage);
     }
 }
@@ -240,6 +246,7 @@ function start(type,diff,muteLog) {
             log.info(log._("nodes.flows.missing-type-install-2"));
             log.info("  "+settings.userDir);
         }
+        events.emit("runtime-event",{id:"runtime-state",type:"warning",text:"notification.warnings.missing-types"});
         return when.resolve();
     }
     if (!muteLog) {
@@ -289,6 +296,8 @@ function start(type,diff,muteLog) {
     }
 
     events.emit("nodes-started");
+    events.emit("runtime-event",{id:"runtime-state"});
+
     if (!muteLog) {
         if (diff) {
             log.info(log._("nodes.flows.started-modified-"+type));

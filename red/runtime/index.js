@@ -1,5 +1,5 @@
 /**
- * Copyright 2013, 2016 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ var log = require("./log");
 var i18n = require("./i18n");
 var events = require("./events");
 var settings = require("./settings");
+
+var express = require("express");
 var path = require('path');
 var fs = require("fs");
 var os = require("os");
@@ -47,19 +49,22 @@ var adminApi = {
         publish: function() {}
     },
     adminApp: stubbedExpressApp,
-    nodeApp: stubbedExpressApp,
     server: {}
 }
+
+var nodeApp;
 
 function init(userSettings,_adminApi) {
     userSettings.version = getVersion();
     log.init(userSettings);
     settings.init(userSettings);
+
+    nodeApp = express();
+
     if (_adminApi) {
         adminApi = _adminApi;
     }
     redNodes.init(runtime);
-
 }
 
 var version;
@@ -92,11 +97,17 @@ function start() {
                     reportMetrics();
                 }, settings.runtimeMetricInterval||15000);
             }
-            console.log("\n\n"+log._("runtime.welcome")+"\n===================\n");
+            log.info("\n\n"+log._("runtime.welcome")+"\n===================\n");
             if (settings.version) {
                 log.info(log._("runtime.version",{component:"Node-RED",version:"v"+settings.version}));
             }
             log.info(log._("runtime.version",{component:"Node.js ",version:process.version}));
+            if (settings.UNSUPPORTED_VERSION) {
+                log.error("*****************************************************************");
+                log.error("* "+log._("runtime.unsupported_version",{component:"Node.js",version:process.version,requires: ">=4"})+" *");
+                log.error("*****************************************************************");
+                events.emit("runtime-event",{id:"runtime-unsupported-version",type:"error",text:"notification.errors.unsupportedVersion"});
+            }
             log.info(os.type()+" "+os.release()+" "+os.arch()+" "+os.endianness());
             return redNodes.load().then(function() {
 
@@ -189,6 +200,7 @@ var runtime = module.exports = {
     nodes: redNodes,
     util: require("./util"),
     get adminApi() { return adminApi },
+    get nodeApp() { return nodeApp },
     isStarted: function() {
         return started;
     }

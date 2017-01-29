@@ -1,5 +1,5 @@
 /**
- * Copyright 2013, 2016 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,9 @@ module.exports = {
 
     // The maximum length, in characters, of any message sent to the debug sidebar tab
     debugMaxLength: 1000,
+
+    // Colourise the console output of the debug node
+    //debugUseColors: true,
 
     // The file containing the flows. If not set, it defaults to flows_<hostname>.json
     //flowFile: 'flows.json',

@@ -1,5 +1,5 @@
 /**
- * Copyright 2013,2015 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -467,26 +467,28 @@ module.exports = function(RED) {
                     else {
                         for (var j = 0; j < data.length; j++ ) {
                             if (node.out === "time") {
-                                // do the timer thing
-                                if (clients[connection_id] && clients[connection_id].timeout) {
-                                    i += 1;
-                                    buf[i] = data[j];
-                                }
-                                else {
-                                    clients[connection_id].timeout = setTimeout(function () {
-                                        if (clients[connection_id]) {
-                                            clients[connection_id].timeout = null;
-                                            clients[connection_id].msg.payload = new Buffer(i+1);
-                                            buf.copy(clients[connection_id].msg.payload,0,0,i+1);
-                                            node.send(clients[connection_id].msg);
-                                            if (clients[connection_id].client) {
-                                                node.status({}); clients[connection_id].client.destroy();
-                                                delete clients[connection_id];
+                                if (clients[connection_id]) {
+                                    // do the timer thing
+                                    if (clients[connection_id].timeout) {
+                                        i += 1;
+                                        buf[i] = data[j];
+                                    }
+                                    else {
+                                        clients[connection_id].timeout = setTimeout(function () {
+                                            if (clients[connection_id]) {
+                                                clients[connection_id].timeout = null;
+                                                clients[connection_id].msg.payload = new Buffer(i+1);
+                                                buf.copy(clients[connection_id].msg.payload,0,0,i+1);
+                                                node.send(clients[connection_id].msg);
+                                                if (clients[connection_id].client) {
+                                                    node.status({}); clients[connection_id].client.destroy();
+                                                    delete clients[connection_id];
+                                                }
                                             }
-                                        }
-                                    }, node.splitc);
-                                    i = 0;
-                                    buf[0] = data[j];
+                                        }, node.splitc);
+                                        i = 0;
+                                        buf[0] = data[j];
+                                    }
                                 }
                             }
                             // count bytes into a buffer...
@@ -541,7 +543,19 @@ module.exports = function(RED) {
                     if (clients[connection_id]) {
                         clients[connection_id].connected  = false;
                     }
-                    if (node.done) { node.done(); }
+
+                    var anyConnected = false;
+
+                    for (var client in clients) {
+                        if (clients[client].connected) {
+                            anyConnected = true;
+                            break;
+                        }
+                    }
+                    if (node.done && !anyConnected) {
+                        clients = {};
+                        node.done();
+                    }
                 });
 
                 clients[connection_id].client.on('error', function() {
@@ -556,6 +570,7 @@ module.exports = function(RED) {
                 });
 
                 clients[connection_id].client.on('timeout',function() {
+                    //console.log("TIMEOUT");
                     clients[connection_id].connected = false;
                     node.status({fill:"grey",shape:"dot",text:"tcpin.errors.connect-timeout"});
                     //node.warn(RED._("tcpin.errors.connect-timeout"));
@@ -579,9 +594,20 @@ module.exports = function(RED) {
             for (var client in clients) {
                 clients[client].client.destroy();
             }
-            clients = {};
             node.status({});
-            done();
+
+            var anyConnected = false;
+            for (var c in clients) {
+                if (clients[c].connected) {
+                    anyConnected = true;
+                    break;
+                }
+            }
+
+            if (!anyConnected) {
+                clients = {};
+                done();
+            }
         });
 
     }

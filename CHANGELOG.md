@@ -1,3 +1,130 @@
+#### 0.16.2: Maintenance Release
+
+ - Ensure custom mustache context parent set in Template node fixes #1126
+ - Display debug node name in debug panel if its known
+ - Ensure auth-tokens are removed when no user is specified in settings
+ - Ensure all a tags have blank target in info sidebar
+ - Ensure links do not span tabs in the editor
+ - Avoid creating multiple reconnect timers in websocket node
+ - Fix inner reference in install fail message catalog entry Fixes #1120
+ - Display buffer data properly for truncated buffers under Object property
+
+#### 0.16.1: Maintenance Release
+
+ - Add colour swatches to debug when hex colour matched
+ - Nodes with hasUsers set to false should not appear unused
+ - Change hard error to verbose warning if using old node.js level
+ - Don't filter debug properties starting with _ Fixes #1117
+ - Node logged errors not displayed properly in debug pane Fixes #1116
+ - Do not look for existing nodes when checking for wires on paste Fixes #1114
+ - -v option not enabling verbose mode properly
+ - Add node.js version check on startup
+
+#### 0.16.0: Milestone Release
+
+Runtime
+ - Drop support for node 0.10 and 0.12
+
+Nodes
+
+ - Add option to colourise debug console output Closes #1103
+ - Add property validation to nodes using typedInput
+ - Add common validator for typedInput fields Closes #1104
+ - Update debug node console logging indicator icon Closes #1094
+ - Let exec node (spawn) handle commands with spaces in path
+ - Add symbol to debug node to indicate debugging also to console.log
+ - Change file node to use node 4 syntax (drops support for 0.8)
+ - add info for httprequest responseUrl property
+ - Add res.responseUrl to httprequest node response
+ - Add support for flow and global context in Template node (#1048)
+ - Added YAML parser node (#1034)
+ - node-red-node-serialport removed as a default node
+
+Editor
+
+ - Add install/remove dialog to increase friction Closes #1109
+ - Report node catalogue load errors Closes #1009
+ - Properly report module remove errors in palette editor Fixes #1043
+ - Update rather than hide install button after success install
+ - Tweak search box styling
+ - Display info tips slightly longer
+ - Allow tips to be enabled/disabled via menu option
+ - Info-tips update
+ - Make typedInput keyboard navigable
+ - update Font Awesome to 4.7.0
+ - Add expression editor for jsonata
+ - Overhaul keyboard handling and introduce editor actions
+ - Add Japanese translation file(editor.json) (#1084)
+ - Add quick-add node mode with cmd/ctrl-click
+ - Add cmd/ctrl-click to quick add wires
+ - Use json-stringify-safe to detect circular references in debug msgs
+ - debug - format if time if correct length/range
+ - Make Debug object explorable
+ - Initial debug pop-out window
+ - Add proper three-way diff view
+ - Focus tray body when edit dialog opened
+ - Hit enter to edit first node in selection
+ - Add node delete button to edit dialog
+ - Add notification when runtime stopped due to missing types Part of #832
+
+Fixes
+
+ - Do not tie debug src loading to needsPermission Fixes #1111
+ - Initialise nodeApp regardless of httpAdmin setting Closes #1096 #1095
+ - Speed up reveal of search dialogs
+ - Ensure flows exist before delegating status/error events Fixes #1069
+ - Update package dependencies
+ - Update MQTT to latest 2.2.1
+ - Node status not being refreshed properly in the editor
+ - Try to prevent auto-fill of password fields in node edit tray Fixes #1081
+ - Fix whitespace in localfilesystem
+ - fix bug where savesettings did not honor local settings variables (#1073)
+ - Tidy up unused/duplicate editor messages Closes #922
+ - Property expressions must not be blank
+ - Tidy up merge commit of validatePropertyExpression
+ - add port if wires array > number of ports declared.
+ - Allow quoted property expressions Fixes #1101
+ - Index all node properties for node search
+ - Remove node 0.10 from travis config
+ - update welcome message to use logger so it can be turned off/on if required (#1083)
+ - Fix dynamically loading multiple node-sets from palette editor
+ - Allow a node to reorder its outputs and maintain links Fixes #1031
+
+#### 0.15.3: Maintenance Release
+
+ - Tcpgetfix: Another small check (#1070)
+ - TCPGet: Ensure done() is called only once (#1068)
+ - Allow $ and _ at start of property identifiers Fixes #1063
+ - TCPGet: Separated the node.connected property for each instance (#1062)
+ - Corrected 'overide' typo in XML node help (#1061)
+ - TCPGet: Last property check (hopefully) (#1059)
+ - Add additional safety checks to avoid acting on non-existent objects (#1057)
+ - add --title for process name to command line options
+ - add indicator for fire once on inject node
+ - reimplement $(env var) replace to share common code.
+ - Fix error message for missing node html file, and add test.
+ - Let credentials also use $(...) substitutions from ENV
+ - Rename insecureRedirect to requireHttps
+ - Add setting to cause insecure redirect (#1054)
+ - Palette editor fixes (#1033)
+ - Close comms on stopServer in test helper (#1020)
+ - Tcpgetfix (#1050)
+ - TCPget: Store incoming messages alongside the client object to keep reference
+ - Merge remote-tracking branch 'upstream/master' into tcpgetfix
+ - TCPget can now handle concurrent sessions (#1042)
+ - Better scope handling
+ - Add security checks
+ - small change to udp httpadmin
+ - Fix comparison to "" in tcpin
+ - Change scope of clients object
+ - Works when connection is left open
+ - First release of multi connection tcpget
+ - Fix node.error() not printing when passed false (#1037)
+ - fix test for CSV array input
+ - different test for Pi (rather than use serial port name)
+ - Fix missing 0 handling for css node with array input
+
+
 #### 0.15.2: Maintenance Release
 
  - Revert bidi changes to nodes and hide menu option until fixed Fixes #1024

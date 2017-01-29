@@ -1,5 +1,5 @@
 /**
- * Copyright 2014, 2016 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ var needsPermission = auth.needsPermission;
 var i18n;
 var log;
 var adminApp;
-var nodeApp;
 var server;
 var runtime;
 
@@ -68,9 +67,6 @@ function init(_server,_runtime) {
     var settings = runtime.settings;
     i18n = runtime.i18n;
     log = runtime.log;
-    if (settings.httpNodeRoot !== false) {
-        nodeApp = express();
-    }
     if (settings.httpAdminRoot !== false) {
         comms.init(server,runtime);
         adminApp = express();
@@ -165,7 +161,12 @@ function init(_server,_runtime) {
     }
 }
 function start() {
-    return i18n.registerMessageCatalog("editor",path.resolve(path.join(__dirname,"locales")),"editor.json").then(function(){
+    var catalogPath = path.resolve(path.join(__dirname,"locales"));
+    return i18n.registerMessageCatalogs([
+        {namespace: "editor",   dir: catalogPath, file:"editor.json"},
+        {namespace: "jsonata",  dir: catalogPath, file:"jsonata.json"},
+        {namespace: "infotips", dir: catalogPath, file:"infotips.json"}
+    ]).then(function(){
         comms.start();
     });
 }
@@ -187,6 +188,5 @@ module.exports = {
         publish: comms.publish
     },
     get adminApp() { return adminApp; },
-    get nodeApp() { return nodeApp; },
     get server() { return server; }
 };

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ RED.clipboard = (function() {
     var dialogContainer;
     var exportNodesDialog;
     var importNodesDialog;
+    var disabled = false;
 
     function setupDialogs() {
         dialog = $('<div id="clipboard-dialog" class="hide node-red-dialog"><form class="dialog-form form-horizontal"></form></div>')
@@ -128,6 +129,9 @@ RED.clipboard = (function() {
     }
 
     function importNodes() {
+        if (disabled) {
+            return;
+        }
         dialogContainer.empty();
         dialogContainer.append($(importNodesDialog));
         dialogContainer.i18n();
@@ -153,6 +157,10 @@ RED.clipboard = (function() {
     }
 
     function exportNodes() {
+        if (disabled) {
+            return;
+        }
+
         dialogContainer.empty();
         dialogContainer.append($(exportNodesDialog));
         dialogContainer.i18n();
@@ -257,7 +265,7 @@ RED.clipboard = (function() {
 
     function hideDropTarget() {
         $("#dropTarget").hide();
-        RED.keyboard.remove(/* ESCAPE */ 27);
+        RED.keyboard.remove("escape");
     }
 
     return {
@@ -274,13 +282,25 @@ RED.clipboard = (function() {
                     RED.menu.setDisabled("menu-item-export-library",false);
                 }
             });
-            RED.keyboard.add("workspace", /* e */ 69,{ctrl:true},function(){exportNodes();d3.event.preventDefault();});
-            RED.keyboard.add("workspace", /* i */ 73,{ctrl:true},function(){importNodes();d3.event.preventDefault();});
+
+            RED.actions.add("core:show-export-dialog",exportNodes);
+            RED.actions.add("core:show-import-dialog",importNodes);
+
+
+            RED.events.on("editor:open",function() { disabled = true; });
+            RED.events.on("editor:close",function() { disabled = false; });
+            RED.events.on("search:open",function() { disabled = true; });
+            RED.events.on("search:close",function() { disabled = false; });
+            RED.events.on("type-search:open",function() { disabled = true; });
+            RED.events.on("type-search:close",function() { disabled = false; });
+            RED.events.on("palette-editor:open",function() { disabled = true; });
+            RED.events.on("palette-editor:close",function() { disabled = false; });
+
 
             $('#chart').on("dragenter",function(event) {
                 if ($.inArray("text/plain",event.originalEvent.dataTransfer.types) != -1) {
                     $("#dropTarget").css({display:'table'});
-                    RED.keyboard.add("*", /* ESCAPE */ 27,hideDropTarget);
+                    RED.keyboard.add("*", "escape" ,hideDropTarget);
                 }
             });
 

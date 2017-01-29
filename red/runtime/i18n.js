@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 IBM Corp.
+ * Copyright JS Foundation and other contributors, http://js.foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,13 @@ var defaultLang = "en-US";
 
 var resourceMap = {};
 var resourceCache = {};
+
+function registerMessageCatalogs(catalogs) {
+    var promises = catalogs.map(function(catalog) {
+        return registerMessageCatalog(catalog.namespace,catalog.dir,catalog.file);
+    });
+    return when.settle(promises);
+}
 
 function registerMessageCatalog(namespace,dir,file) {
     return when.promise(function(resolve,reject) {
@@ -109,9 +116,10 @@ function getCatalog(namespace,lang) {
 var obj = module.exports = {
     init: init,
     registerMessageCatalog: registerMessageCatalog,
+    registerMessageCatalogs: registerMessageCatalogs,
     catalog: getCatalog,
     i: i18n,
-    defaultLang:defaultLang
+    defaultLang: defaultLang
 }
 
 obj['_'] = function() {
