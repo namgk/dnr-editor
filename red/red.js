@@ -92,6 +92,7 @@ module.exports = {
             if (apiEnabled) {
                 return api.stop();
             }
+            dnr.stop()
         })
     },
     nodes: runtime.nodes,

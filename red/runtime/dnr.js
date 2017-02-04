@@ -1,17 +1,13 @@
-// var mqtt = require('mqtt');
-// var client = mqtt.connect('mqtt://localhost:1883');
-// var settings = require('./settings.js');
 var log = require("./log");
 var ws = require("ws");
 var util = require("./util");
 
 var connected = false;
-var activeDevices = {}; // deviceId --> ws, context, lastSeen
-var availableNodes = {} // nodeId --> [deviceId]
+var activeDevices = {}; // deviceId --> ws, context, lastSeen, contributingNodes
 var wsServer;
 
 var server;
-var settings;
+var runtime
 
 var heartbeatTimer;
 var lastSentTime;
@@ -20,8 +16,16 @@ var WS_KEEP_ALIVE = 15000;
 var DEVICE_INACTIVE = 30000
 
 var dnrInterface = require('dnr-interface')
-var RoutingTableReq = dnrInterface.RoutingTableReq
-var RoutingTableRes = dnrInterface.RoutingTableRes
+var DnrSyncReq = dnrInterface.DnrSyncReq
+var DnrSyncRes = dnrInterface.DnrSyncRes
+
+var TOPIC_DNR_HB = dnrInterface.TOPIC_DNR_HB
+var TOPIC_REGISTER = dnrInterface.TOPIC_REGISTER
+var TOPIC_REGISTER_ACK = dnrInterface.TOPIC_REGISTER_ACK
+var TOPIC_DNR_SYN_REQ = dnrInterface.TOPIC_DNR_SYN_REQ
+var TOPIC_DNR_SYN_RES = dnrInterface.TOPIC_DNR_SYN_RES
+var TOPIC_DNR_SYN_RESS = dnrInterface.TOPIC_DNR_SYN_RESS
+var TOPIC_FLOW_DEPLOYED = dnrInterface.TOPIC_FLOW_DEPLOYED
 
 // hooked from flow deployment 
 function publish(config, diff, flows){
@@ -29,10 +33,10 @@ function publish(config, diff, flows){
 }
 
 function init(_server,_runtime) {
-  server = _server;
-  settings = _runtime.settings;
+  server = _server
+  runtime = _runtime
 
-  var path = settings.httpAdminRoot || "/";
+  var path = _runtime.settings.httpAdminRoot || "/";
   path = (path.slice(0,1) != "/" ? "/":"") + path + (path.slice(-1) == "/" ? "":"/") + "dnr";
   
   wsServer = new ws.Server({
@@ -47,7 +51,7 @@ function init(_server,_runtime) {
 
   _runtime.adminApi.adminApp.post("/dnr/flows/:id", require("../api").auth.needsPermission("flows.read"), function(req,res) {
     var deployingFlow = req.params.id;
-    broadcast('flow_deployed', {
+    broadcast(TOPIC_FLOW_DEPLOYED, {
       activeFlow: _runtime.nodes.getFlow(deployingFlow),
       allFlows: _runtime.nodes.getFlows().flows.filter(function(e){
         return e.type === 'tab'
@@ -58,110 +62,136 @@ function init(_server,_runtime) {
     res.sendStatus(200)
   })
 
-  _runtime.adminApi.adminApp.post("/dnr/routingtable", function(req,res) {
-    console.log(req.body)
+  start()
+}
 
-    /* RoutingTableReq: 
-      { 
-        deviceId: '1',
-        flowId: 'xxx'
-        dnrLinks: [ 
-          '54236bf5.2703a4_0_1d58c765.938219-<linkState>',
-          '1d58c765.938219_0_6cd77d5e.6c54b4-<linkState>' 
-        ] 
-      }
-    */
-    var routingTableReq = new RoutingTableReq().fromObj(req.body)
-    let deviceId = routingTableReq.deviceId
-    let flowId = routingTableReq.flowId
-    let dnrLinks = routingTableReq.dnrLinks
+/* 
+  @param dnrSyncReq: 
+    { 
+      deviceId: '1',
+      flowId: 'xxx',
+      dnrLinks: [ 
+        '54236bf5.2703a4_0_1d58c765.938219-<linkState>',
+        '1d58c765.938219_0_6cd77d5e.6c54b4-<linkState>' 
+      ],
+      contributingNodes: ["54236bf5.2703a4"]
+    }
 
-    let flow = _runtime.nodes.getFlow(flowId)
+  @return:
+    {
+      dnrLinks: {
+        <link> : <topic>
+      },
+      brokers: []
+    }
+*/
+function processDnrSyncRequest(dnrSyncReq){
+  let deviceId = dnrSyncReq.deviceId
+  let flowId = dnrSyncReq.flowId
+  let dnrLinks = dnrSyncReq.dnrLinks
+  let contributingNodes = dnrSyncReq.contributingNodes
 
-    var response = new RoutingTableRes()
+  activeDevices[deviceId].contributingNodes = contributingNodes
 
-    for (let dnrLink of dnrLinks){
-      let link = dnrLink.split('-')[0]
-      let linkState = dnrLink.split('-')[1]
-      let linkType
-      
-      let sourceId = link.split('_')[0]
-      let sourcePort = link.split('_')[1]
-      let destId = link.split('_')[2]
+  var dnrLinksResponse = {}
 
-      // based on this flow
-      console.log(flow)
-      for (let node of flow.nodes){
-        if (node.id !== sourceId){
-          continue
-        }
+  for (let dnrLink of dnrLinks){
+    let link = dnrLink.split('-')[0]
+    let linkState = dnrLink.split('-')[1]
+    let linkType
+    
+    let sourceId = link.split('_')[0]
+    let sourcePort = link.split('_')[1]
+    let destId = link.split('_')[2]
 
-        let linkConstraints = node.constraints.link
-        linkType = linkConstraints[sourcePort + '_' + destId]
-      }
-
-      let commTopic
-      // notes, there are several cases where daemons don't need to ask
-      // for where they should send/fetch data to/from
-      // e.g 
-      //    if the link type is NN, the topic for pub/sub is 
-      // always <srcId>_<srcPort>_<destId>
-      //    if the link type is 1N and the dnrNode status is RECEIVE_REDIRECT,
-      // the topic for publishing is always 
-      //    "from_<myself>_<srcId>_<srcPort>_<destId>"
-      //    similarly, if the link type is N1 and status is FETCH_FORWARD,
-      // the topic for subscribing is always
-      //    "to_<myself>_<srcId>_<srcPort>_<destId>"
-
-      if (linkState === dnrInterface.Context.FETCH_FORWARD){
-        // finding which device to fetch from
-        // subcribing topic will be
-        switch (linkType){
-          case '11':
-            // "from_<deviceId>_to_deviceId_<srcId>_<srcPort>_<destId>"
-            break
-          case '1N':
-            // "from_<deviceId>_<srcId>_<srcPort>_<destId>"
-            break
-          default:
-            break
-        }
-
-      } else if (linkState === dnrInterface.Context.RECEIVE_REDIRECT){
-        // finding which device to redirect to
-        // publishing topic will be
-        switch (linkType){
-          case '11':
-            // "from_deviceId_to_<deviceId>_<srcId>_<srcPort>_<destId>"
-            break
-          case 'N1':
-            // "to_<deviceId>_<srcId>_<srcPort>_<destId>"
-            break
-          default:
-            break
-        }
+    // based on this flow
+    let flow = runtime.nodes.getFlow(flowId)
+    for (let node of flow.nodes){
+      if (node.id !== sourceId){
+        continue
       }
 
-      if (commTopic){
-        response.set(link, commTopic)
+      linkType = node.constraints.link[sourcePort + '_' + destId]
+    }
+
+    let commTopic
+    if (linkState === dnrInterface.Context.FETCH_FORWARD){
+      // find one device that host srcId
+      let mostFreeDevId = findDeviceForNode(sourceId)   
+           
+      if (!mostFreeDevId){
+        continue
+      }
+
+      // subcribing topic will be
+      switch (linkType){
+        case '11':
+          // "from_<deviceId>_to_deviceId_<srcId>_<srcPort>_<destId>"
+          commTopic = "from_" + mostFreeDevId + 
+                      "_to_" + deviceId + "_" + link
+          break
+        case '1N':
+          // "from_<deviceId>_<srcId>_<srcPort>_<destId>"
+          commTopic = "from_" + mostFreeDevId + "_" + link
+          break
+        default:
+          break
+      }
+
+    } else if (linkState === dnrInterface.Context.RECEIVE_REDIRECT){
+      // find one device that host destId
+      let mostFreeDevId = findDeviceForNode(destId)   
+           
+      if (!mostFreeDevId){
+        continue
+      }
+
+      // publishing topic will be
+      switch (linkType){
+        case '11':
+          // "from_deviceId_to_<deviceId>_<srcId>_<srcPort>_<destId>"
+          commTopic = "from_" + deviceId + 
+                      "_to_" + mostFreeDevId + "_" + link
+          break
+        case 'N1':
+          // "to_<deviceId>_<srcId>_<srcPort>_<destId>"
+          commTopic = "to_" + mostFreeDevId + "_" + link
+          break
+        default:
+          break
       }
     }
 
-    /* response should look like:
-      { 
-        <link> : <topic>
-      }
-    */
-    res.json(response);
-  })
+    if (commTopic){
+      dnrLinksResponse[link] = commTopic
+    }
+  }
 
-  start()
+  return dnrLinksResponse
+}
+
+function findDeviceForNode(nodeId){
+  let mostFreeMem = 0
+  let mostFreeDevId
+  for (let dId in activeDevices){
+    let device = activeDevices[dId]
+    let freeMem = device.context.freeMem
+    
+    let contribNodes = activeDevices[dId].contributingNodes
+    if (contribNodes.includes(nodeId)){
+      if (freeMem > mostFreeMem){
+        mostFreeMem = freeMem
+        mostFreeDevId = dId
+      }
+    }
+  }
+  return mostFreeDevId
 }
 
 function getUniqueId(){
   let connId = util.generateId()
   if (activeDevices[connId]){
-    return getId()
+    return getUniqueId()
   }
   return connId
 }
@@ -191,17 +221,17 @@ function start(){
 
       console.log(msg)
 
-      if (msg.topic === 'register'){
+      if (msg.topic === TOPIC_REGISTER){
         device = msg.device
         
         if (activeDevices[device]){
           device = getUniqueId()
           ws.send(JSON.stringify({
-            'topic': 'register_ack', 'idOk': false, 'id': device
+            'topic': TOPIC_REGISTER_ACK, 'idOk': false, 'id': device
           }))
         } else {
           ws.send(JSON.stringify({
-            'topic': 'register_ack', 'idOk': true, 'id': device
+            'topic': TOPIC_REGISTER_ACK, 'idOk': true, 'id': device
           }))
         }
 
@@ -209,9 +239,23 @@ function start(){
         activeDevices[device] = {ws:ws}
       }
 
-      if (msg.topic === 'dnrhb'){
+      if (msg.topic === TOPIC_DNR_HB){
         activeDevices[msg.device].context = msg.context
         activeDevices[msg.device].lastSeen = Date.now()
+        let dnrSyncReqs = msg.dnrSyncReqs
+        let resp = []
+        for (let k in dnrSyncReqs){
+          let dnrSyncReq = dnrSyncReqs[k]
+          let dnrLinksRes = processDnrSyncRequest(dnrSyncReq)
+          resp.push({
+            'dnrSyncReq': dnrSyncReq,
+            'dnrSyncRes': new DnrSyncRes(dnrLinksRes)
+          })
+        }
+        ws.send(JSON.stringify({
+          'topic': TOPIC_DNR_SYN_RESS,
+          'dnrSyncRess' : resp
+        }))
       }
     });
   });
@@ -225,7 +269,7 @@ function start(){
   heartbeatTimer = setInterval(function() {
     var now = Date.now();
     if (now-lastSentTime > WS_KEEP_ALIVE) {
-      broadcast("dnrhb",lastSentTime);
+      broadcast(TOPIC_DNR_HB,lastSentTime);
     }
   }, WS_KEEP_ALIVE);
 }
