@@ -100,7 +100,6 @@ module.exports = function(grunt) {
                     // Ensure editor source files are concatenated in
                     // the right order
                     "editor/js/red.js",
-                    "editor/js/dnr.js",
                     "editor/js/events.js",
                     "editor/js/i18n.js",
                     "editor/js/settings.js",
@@ -139,6 +138,7 @@ module.exports = function(grunt) {
                     "editor/js/ui/typeSearch.js",
                     "editor/js/ui/subflow.js",
                     "editor/js/ui/touch/radialMenu.js"
+                    ,"editor/js/dnr.js"
                 ],
                 dest: "public/red/red.js"
             },

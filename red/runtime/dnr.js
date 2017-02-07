@@ -1,3 +1,5 @@
+"use strict"
+
 var log = require("./log");
 var ws = require("ws");
 var util = require("./util");
