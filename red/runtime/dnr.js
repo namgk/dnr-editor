@@ -64,6 +64,19 @@ function init(_server,_runtime) {
     res.sendStatus(200)
   })
 
+  _runtime.adminApi.adminApp.get("/dnr/devices", require("../api").auth.needsPermission("flows.read"), function(req,res) {
+    let activeDevicesTemp = []
+    for (let x in activeDevices){
+      activeDevicesTemp.push({
+        id: activeDevices[x].deviceId,
+        context: activeDevices[x].context,
+        lastSeen: activeDevices[x].lastSeen
+      })
+    }
+
+    res.json(activeDevicesTemp)
+  })
+
   start()
 }
 
@@ -204,6 +217,7 @@ function start(){
 
     ws.on('close',function() {
       log.info(device + ' disconnected')
+      runtime.adminApi.comms.publish('devices/disconnected', {id: device}, false)
       delete activeDevices[device]
     });
 
@@ -238,12 +252,20 @@ function start(){
         }
 
         log.info('new device connected - ' + device)
+        runtime.adminApi.comms.publish('devices/connected', {id: device}, false)
+
         activeDevices[device] = {ws:ws}
       }
 
       if (msg.topic === TOPIC_DNR_HB){
         activeDevices[msg.device].context = msg.context
         activeDevices[msg.device].lastSeen = Date.now()
+        runtime.adminApi.comms.publish('devices/heartbeat', {
+          id: msg.device,
+          lastSeen: Date.now(),
+          context: msg.context
+        }, false)
+
         let dnrSyncReqs = msg.dnrSyncReqs
         let resp = []
         for (let k in dnrSyncReqs){
@@ -268,7 +290,60 @@ function start(){
 
   lastSentTime = Date.now();
 
+  var test = [
+    {
+      topic: 'devices/connected',
+      data: {
+        id: '1'
+      }
+    },
+    {
+      topic: 'devices/connected',
+      data: {
+        id: '2'
+      }
+    },
+    {
+      topic: 'devices/disconnected',
+      data: {
+        id: '2'
+      }
+    },
+    {
+      topic: 'devices/heartbeat',
+      data: {
+        id: '1',
+        lastSeen: Date.now(),
+        context: {
+          freeMem: 512
+        }
+      }
+    },
+    {
+      topic: 'devices/heartbeat',
+      data: {
+        id: '1',
+        lastSeen: Date.now(),
+        context: {
+          freeMem: 111
+        }
+      }
+    },
+    {
+      topic: 'devices/disconnected',
+      data: {
+        id: '1'
+      }
+    }
+  ]
+
+  var testIdx = 0
+
   heartbeatTimer = setInterval(function() {
+    runtime.adminApi.comms.publish(test[testIdx % test.length].topic, test[testIdx % test.length].data, false)
+    testIdx++
+
+
     var now = Date.now();
     if (now-lastSentTime > WS_KEEP_ALIVE) {
       broadcast(TOPIC_DNR_HB,lastSentTime);
