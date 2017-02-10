@@ -68,7 +68,7 @@ function init(_server,_runtime) {
     let activeDevicesTemp = []
     for (let x in activeDevices){
       activeDevicesTemp.push({
-        id: activeDevices[x].deviceId,
+        id: x,
         context: activeDevices[x].context,
         lastSeen: activeDevices[x].lastSeen
       })
@@ -267,6 +267,10 @@ function start(){
         }, false)
 
         let dnrSyncReqs = msg.dnrSyncReqs
+        if (!dnrSyncReqs || Object.keys(dnrSyncReqs).length === 0){
+          return
+        }
+
         let resp = []
         for (let k in dnrSyncReqs){
           let dnrSyncReq = dnrSyncReqs[k]
@@ -278,7 +282,7 @@ function start(){
         }
         ws.send(JSON.stringify({
           'topic': TOPIC_DNR_SYN_RESS,
-          'dnrSyncRess' : resp
+          'dnrSync' : resp
         }))
       }
     });
@@ -340,8 +344,8 @@ function start(){
   var testIdx = 0
 
   heartbeatTimer = setInterval(function() {
-    runtime.adminApi.comms.publish(test[testIdx % test.length].topic, test[testIdx % test.length].data, false)
-    testIdx++
+    // runtime.adminApi.comms.publish(test[testIdx % test.length].topic, test[testIdx % test.length].data, false)
+    // testIdx++
 
 
     var now = Date.now();

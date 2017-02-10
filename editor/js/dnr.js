@@ -17,7 +17,6 @@
  RED.dnr = (function() {
     var constraints = [];
     var linkConstraints = {};
-    var devicesList
 
     // location constraints GUI
     function mapInit(){
@@ -775,28 +774,44 @@
 
 
 RED.sidebar.devices = (function() {
-    var content = document.createElement("div");
     var devices = {}
+    var deviceMap
+    var markers = []
 
+    var MAP_ZOOM = 12
+    var MARKER_SIZE = 14
+
+    var content = document.createElement("div");
     content.className = "sidebar-devices";
 
+    var toolbar = $('<div>'+
+        '<a class="sidebar-footer-button" id="workspace-devices-map-view" href="#"><i id="workspaces-devices-list" class="fa fa-map-marker"></i></a></div>')
+
     var searchDiv = $('<div>',{class:"palette-search"}).appendTo(content);
-    searchInput = $('<input type="text" placeholder="Search devices"></input>')
-    .appendTo(searchDiv)
-    .searchBox({
-        delay: 300,
-        change: function() {
+    var searchInput = $('<input type="text" placeholder="Search devices"></input>')
+      .appendTo(searchDiv)
+      .searchBox({
+          delay: 300,
+          change: function() {
             var searchTerm = $(this).val().toLowerCase();
             if (searchTerm.length > 0) {
                 
             } else {
                 searchInput.searchBox('count',loadedList.length);
             }
-        }
-    });
+          }
+      });
 
+    var mapView = $('<div id="deviceMap">').css({
+      "position": "absolute",
+      "top": "35px",
+      "bottom": 0,
+      "left": 0,
+      "right": 0,
+      "z-index": 900
+    }).appendTo(content)
 
-    devicesList = $('<ol>',{style:"position: absolute;top: 35px;bottom: 0;left: 0;right: 0px;"}).appendTo(content).editableList({
+    var devicesList = $('<ol>',{style:"position: absolute;top: 35px;bottom: 0;left: 0;right: 0px;"}).appendTo(content).editableList({
         addButton: false,
         scrollOnAdd: false,
         sort: function(device1,device2) {
@@ -812,31 +827,97 @@ RED.sidebar.devices = (function() {
         addItem: function(container,i,device) {
             var entry = device;
             if (entry) {
-                var headerRow = $('<div>',{class:"device-header"}).appendTo(container);
-                var titleRow = $('<div class="device-meta device-id"><i class="fa fa-cube" style="margin-right: 5px;"></i></div>').appendTo(headerRow);
-                $('<span>').html(entry.id).appendTo(titleRow);
-                var metaRow = $('<div class="device-meta device-lastSeen"><i class="fa fa-tag" style="margin-right: 5px;"></i></div>').appendTo(headerRow);
+              var headerRow = $('<div class="device-header">').appendTo(container)
+              //.css("cursor","pointer")
 
-                var lastSeenText = $('<span>').html(entry.lastSeen).appendTo(metaRow);
+              var titleRow = $('<div class="device-meta device-id"><i class="fa fa-podcast" style="margin-right: 5px;"></i></div>').appendTo(headerRow);
+              $('<span>').html(entry.id).appendTo(titleRow);
+              var metaRow = $('<div class="device-meta device-lastSeen"><i class="fa fa-clock-o" style="margin-right: 5px;"></i></div>').appendTo(headerRow);
 
-                var statusText = $('<span>').html(entry.status).css({"float":"right",
-                  "color": entry.status == 'disconnected' ? 'red' : 'green'
-                }).appendTo(metaRow)
+              var lastSeenText = $('<span>').html(entry.lastSeen).appendTo(metaRow)
 
-                var shade = $('<div class="device-shade hide"><img src="red/images/spin.svg" class="palette-spinner"/></div>').appendTo(container);
+              var statusText = $('<span>').html(entry.status).css({"float":"right",
+                "color": entry.status == 'disconnected' ? 'red' : 'green'
+              }).appendTo(metaRow)
 
-                device.elements = {
-                    statusText: statusText,
-                    lastSeenText: lastSeenText,
-                    container: container,
-                    shade: shade
-                }
-                // refreshNodeModule(entry.name);
+              var shade = $('<div class="device-shade hide"><img src="red/images/spin.svg" class="palette-spinner"/></div>').appendTo(container);
+
+              device.elements = {
+                  statusText: statusText,
+                  lastSeenText: lastSeenText,
+                  container: container,
+                  headerRow: headerRow,
+                  shade: shade
+              }
             } else {
                 $('<div>',{class:"red-ui-search-empty"}).html(RED._('search.empty')).appendTo(container);
             }
         }
     })
+
+    function addOrUpdateNewDevice(device){
+      if (!devices[device.id]){
+        devices[device.id] = {
+          id: device.id,
+          lastSeen: Date.now(),
+          status: 'connected'
+        }
+        devicesList.editableList('addItem', devices[device.id]);
+      } else {
+        devices[device.id].status = 'connected'
+        devices[device.id].lastSeen = Date.now()
+        devices[device.id].elements.statusText.html('connected').css({
+          "float":"right", "color": 'green'
+        })
+        devices[device.id].elements.lastSeenText.html(Date.now())
+      }
+    }
+
+    function updateMap(){
+      for (var i = 0; i < markers.length; i++) {
+        markers[i].setMap(null)
+      }
+
+      map.setZoom(MAP_ZOOM)
+
+      var latlngs = []
+
+      for (var id in devices){
+        if (!devices[id].context || 
+            !devices[id].context.location ||
+            Object.keys(devices[id].context.location).length !== 2){
+          continue
+        }
+
+        latlngs.push({
+          id: id,
+          freeMem: devices[id].context.freeMem,
+          cores: devices[id].context.cores,
+          lat: devices[id].context.location.lat,
+          lng: devices[id].context.location.lng
+        })
+      }
+
+      markers = latlngs.map(function(el, i) {
+        var image = {
+          scaledSize: new google.maps.Size(MARKER_SIZE, MARKER_SIZE)
+        };
+        var marker = new google.maps.Marker({
+          position: el,
+          icon: image,
+          map:map
+        });
+        google.maps.event.addListener(marker , 'click', function(){
+          var infowindow = new google.maps.InfoWindow({
+            content:'Device Id: ' + el.id + ', freeMem: ' + el.freeMem + ', cores: ' + el.cores,
+            position: el,
+          });
+          infowindow.open(map);
+          setTimeout(function () { infowindow.close(); }, 2000);
+        });
+        return marker
+      });
+    }
 
     function init() {
         RED.sidebar.addTab({
@@ -844,7 +925,7 @@ RED.sidebar.devices = (function() {
             label: "devices",
             name: "device tab name",
             content: content,
-            // toolbar: toolbar,
+            toolbar: toolbar,
             closeable: true,
             visible: false,
             onchange: function() { }
@@ -856,42 +937,51 @@ RED.sidebar.devices = (function() {
           console.log(device)
 
           if (topic === 'devices/connected'){
-            if (!devices[device.id]){
-              devices[device.id] = {
-                id: device.id,
-                lastSeen: Date.now(),
-                status: 'ok'
-              }
-              devicesList.editableList('addItem', devices[device.id]);
-            } else {
-              devices[device.id].status = 'ok'
-              devices[device.id].lastSeen = Date.now()
-              devices[device.id].elements.statusText.html('ok').css({
-                "float":"right", "color": 'green'
-              })
-              devices[device.id].elements.lastSeenText.html(Date.now())
-            }
+            addOrUpdateNewDevice(device)
           }
 
           if (topic === 'devices/disconnected'){
-            devices[device.id].status = 'disconnected'
             devices[device.id].elements.statusText.html('disconnected').css({
               "float":"right", "color": 'red'
             })
+            setTimeout(function(){
+              devicesList.editableList('removeItem', devices[device.id]);
+              delete devices[device.id]
+            },2000)
           }
 
           if (topic === 'devices/heartbeat'){
+            var ctx = JSON.stringify(device.context)
             devices[device.id].context = device.context
             devices[device.id].lastSeen = device.lastSeen
             devices[device.id].elements.lastSeenText.html(device.lastSeen)
+            devices[device.id].elements.headerRow.attr("title", ctx)
           }
         })
+
+        map = new google.maps.Map(document.getElementById('deviceMap'), {
+          zoom: MAP_ZOOM,
+          center: {lat: 49.269801, lng: -123.109489}
+        });
+
+        mapView.hide()
+
+        $("#workspace-devices-map-view").on("click", function(e) {
+            e.preventDefault()
+            google.maps.event.trigger(map, 'resize')
+            updateMap()
+            devicesList.toggle()
+            mapView.toggle()
+        });
 
         $.ajax({
           url: "dnr/devices",
           type:"GET",
           success: function(resp) {
-            console.log(resp)
+            for (var i = 0; i< resp.length; i++){
+              var aDev = resp[i]
+              addOrUpdateNewDevice(aDev)
+            }
           },
           error: function(jqXHR,textStatus,errorThrown) {
             console.log('cannot get devices')  
