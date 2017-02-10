@@ -111,7 +111,6 @@
     function init() {
       mapInit()
       RED.sidebar.devices.init()
-      RED.sidebar.show('devices')
 
       $('<li><span class="deploy-button-group button-group">'+
         '<a id="btn-constraints" class="deploy-button" href="#"> <span>Node Requirements</span></a>'+
@@ -259,8 +258,8 @@
           {
             id:"menu-item-dnr-seed",
             toggle:false,
-            // selected: true,
-            label: 'Show dnr seed',
+            // selected: true,  
+            label: 'Export DNR Seed',
             onselect:function() { showDnrSeed()}
           },
           {
@@ -775,14 +774,13 @@
 
 RED.sidebar.devices = (function() {
     var devices = {}
-    var deviceMap
     var markers = []
+    var map
 
-    var MAP_ZOOM = 12
-    var MARKER_SIZE = 14
+    var MAP_ZOOM = 10
 
-    var content = document.createElement("div");
-    content.className = "sidebar-devices";
+    var content = $('<div class="sidebar-devices">')//document.createElement("div");
+    // content.className = "sidebar-devices";
 
     var toolbar = $('<div>'+
         '<a class="sidebar-footer-button" id="workspace-devices-map-view" href="#"><i id="workspaces-devices-list" class="fa fa-map-marker"></i></a></div>')
@@ -870,6 +868,7 @@ RED.sidebar.devices = (function() {
           "float":"right", "color": 'green'
         })
         devices[device.id].elements.lastSeenText.html(Date.now())
+        clearTimeout(devices[device.id].destroyTimer)
       }
     }
 
@@ -877,8 +876,6 @@ RED.sidebar.devices = (function() {
       for (var i = 0; i < markers.length; i++) {
         markers[i].setMap(null)
       }
-
-      map.setZoom(MAP_ZOOM)
 
       var latlngs = []
 
@@ -899,24 +896,21 @@ RED.sidebar.devices = (function() {
       }
 
       markers = latlngs.map(function(el, i) {
-        var image = {
-          scaledSize: new google.maps.Size(MARKER_SIZE, MARKER_SIZE)
-        };
         var marker = new google.maps.Marker({
           position: el,
-          icon: image,
-          map:map
-        });
+          map: map,
+          id: id
+        })
         google.maps.event.addListener(marker , 'click', function(){
           var infowindow = new google.maps.InfoWindow({
             content:'Device Id: ' + el.id + ', freeMem: ' + el.freeMem + ', cores: ' + el.cores,
             position: el,
-          });
+          })
           infowindow.open(map);
           setTimeout(function () { infowindow.close(); }, 2000);
-        });
+        })
         return marker
-      });
+      })
     }
 
     function init() {
@@ -932,47 +926,14 @@ RED.sidebar.devices = (function() {
         });
         RED.actions.add("dnr:show-devices-tab",function() {RED.sidebar.show('devices')});
 
-        RED.comms.subscribe("devices/#",function(topic,device) {
-          console.log(topic)
-          console.log(device)
-
-          if (topic === 'devices/connected'){
-            addOrUpdateNewDevice(device)
-          }
-
-          if (topic === 'devices/disconnected'){
-            devices[device.id].elements.statusText.html('disconnected').css({
-              "float":"right", "color": 'red'
-            })
-            setTimeout(function(){
-              devicesList.editableList('removeItem', devices[device.id]);
-              delete devices[device.id]
-            },2000)
-          }
-
-          if (topic === 'devices/heartbeat'){
-            var ctx = JSON.stringify(device.context)
-            devices[device.id].context = device.context
-            devices[device.id].lastSeen = device.lastSeen
-            devices[device.id].elements.lastSeenText.html(device.lastSeen)
-            devices[device.id].elements.headerRow.attr("title", ctx)
-          }
-        })
-
         map = new google.maps.Map(document.getElementById('deviceMap'), {
           zoom: MAP_ZOOM,
           center: {lat: 49.269801, lng: -123.109489}
         });
 
-        mapView.hide()
+        map.setZoom(MAP_ZOOM)
 
-        $("#workspace-devices-map-view").on("click", function(e) {
-            e.preventDefault()
-            google.maps.event.trigger(map, 'resize')
-            updateMap()
-            devicesList.toggle()
-            mapView.toggle()
-        });
+        mapView.hide()
 
         $.ajax({
           url: "dnr/devices",
@@ -986,7 +947,40 @@ RED.sidebar.devices = (function() {
           error: function(jqXHR,textStatus,errorThrown) {
             console.log('cannot get devices')  
           }
+        })
+
+        $("#workspace-devices-map-view").on("click", function(e) {
+          // e.preventDefault()
+          updateMap()
+          devicesList.toggle()
+          mapView.toggle()
+          google.maps.event.trigger(map, 'resize')
         });
+
+        RED.comms.subscribe("devices/#",function(topic,device) {
+          if (topic === 'devices/connected'){
+            addOrUpdateNewDevice(device)
+          }
+
+          if (topic === 'devices/disconnected'){
+            devices[device.id].elements.statusText.html('disconnected').css({
+              "float":"right", "color": 'red'
+            })
+            devices[device.id].destroyTimer = setTimeout(function(){
+              devicesList.editableList('removeItem', devices[device.id]);
+              delete devices[device.id]
+            },2000)
+          }
+
+          if (topic === 'devices/heartbeat'){
+            var ctx = JSON.stringify(device.context)
+            devices[device.id].context = device.context
+            devices[device.id].lastSeen = device.lastSeen
+            devices[device.id].elements.lastSeenText.html(device.lastSeen)
+            devices[device.id].elements.headerRow.attr("title", ctx)
+            updateMap()
+          }
+        })
     }
     return {
         init:init
