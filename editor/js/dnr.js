@@ -36,7 +36,7 @@ function initGui(){
 
   $('<div id="node-dialog-new-constraints" class="hide node-red-dialog">\
     <div class="form-row">\
-        <label for="constraint-id" ><i class="fa fa-cloud"></i>Constraint Id:</label>\
+        <label for="constraint-id" ><i class="fa"></i>Constraint Id:</label>\
         <input type="text" id="constraint-id">\
         <label for="device-id" ><i class="fa"></i>Device ID:</label>\
         <input type="text" id="device-id" placeholder="device s application scope unique ID">\
