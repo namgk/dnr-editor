@@ -349,12 +349,18 @@ RED.dnr = (function() {
     var location = $( "#location-constraint" ).val();
     var memory = $( "#memory-constraint" ).val();
     var cores = $( "#cores-constraint" ).val();
-    // var network = $( "#network-constraint" ).val();
-    // var custom = $( "#custom-constraint" ).val();
+    
+    try {
+      memory = parseInt(memory)
+      cores = parseInt(cores)
+    } catch(e){
+      alert('cores and memory are integer')
+      return
+    }
     
     var creatingConstraint = {
       id:constraintId
-    };  
+    }
     if (deviceId)
         creatingConstraint['deviceId'] = deviceId;
     if (location)
