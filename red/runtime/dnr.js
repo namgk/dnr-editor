@@ -55,6 +55,7 @@ function init(_server,_runtime) {
     var deployingFlow = req.params.id;
     broadcast(TOPIC_FLOW_DEPLOYED, {
       activeFlow: _runtime.nodes.getFlow(deployingFlow),
+      globalFlow: _runtime.nodes.getFlow('global'),
       allFlows: _runtime.nodes.getFlows().flows.filter(function(e){
         return e.type === 'tab'
       }).map(function(ee){

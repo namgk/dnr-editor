@@ -55,7 +55,6 @@ RED.view = (function() {
         moving_set = [],
         lasso = null,
         showStatus = false,
-        showConstraints = false,
         lastClickNode = null,
         dblClickPrimed = null,
         clickTime = 0,
@@ -1918,8 +1917,6 @@ RED.view = (function() {
                     //node.append("path").attr("class","node_error").attr("d","M 3,-3 l 10,0 l -5,-8 z");
                     node.append("image").attr("class","node_error hidden").attr("xlink:href","icons/node-error.png").attr("x",0).attr("y",-6).attr("width",10).attr("height",9);
                     node.append("image").attr("class","node_changed hidden").attr("xlink:href","icons/node-changed.png").attr("x",12).attr("y",-6).attr("width",10).attr("height",10);
-
-                    RED.dnr.appendConstraints(node);
             });
 
             node.each(function(d,i) {
@@ -2151,7 +2148,7 @@ RED.view = (function() {
                             }
                         }
 
-                        RED.dnr.redrawConstraints(d, thisNode, showConstraints);
+                        RED.dnr.redrawConstraints(thisNode);
 
                         d.dirty = false;
                     }
@@ -2557,16 +2554,6 @@ RED.view = (function() {
         },
         focus: focusView,
         importNodes: importNodes,
-        constraints: function(s) {
-            if (s == null) {
-                return showConstraints;
-            } else {
-                showConstraints = s;
-                RED.nodes.eachNode(function(n) { n.dirty = true;});
-                //TODO: subscribe/unsubscribe here
-                redraw();
-            }
-        },
         calculateTextWidth: calculateTextWidth,
         select: function(selection) {
             if (typeof selection !== "undefined") {
