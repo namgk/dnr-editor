@@ -183,6 +183,7 @@ RED.dnr = (function() {
           return
         }
 
+        // populate fields with existing value
         if (c['deviceId']){
           $( "#device-id" ).val(c['deviceId'])
         }
@@ -350,17 +351,25 @@ RED.dnr = (function() {
     var memory = $( "#memory-constraint" ).val();
     var cores = $( "#cores-constraint" ).val();
     
-    try {
+    if (memory){
       memory = parseInt(memory)
-      cores = parseInt(cores)
-    } catch(e){
-      alert('cores and memory are integer')
-      return
+      if (isNaN(memory)){
+        alert('cores and memory are integer')
+        return
+      }
     }
-    
+    if (cores){
+      cores = parseInt(cores)
+      if (isNaN(cores)){
+        alert('cores and memory are integer')
+        return
+      }
+    }
+
     var creatingConstraint = {
       id:constraintId
     }
+
     if (deviceId)
         creatingConstraint['deviceId'] = deviceId;
     if (location)
@@ -381,6 +390,8 @@ RED.dnr = (function() {
     for (var i = 0; i < constraints.length; i++){
       if (c.id && c.id === constraints[i].id){
         // updating existing constraint
+        c.fill = constraints[i].fill
+        c.text = constraints[i].text
         constraints[i] = c
         return
       }
@@ -411,7 +422,7 @@ RED.dnr = (function() {
         } else {
           // reset these fields to blank
           resetConstraintsDialog()
-          setNodeConstraint(c)
+          setNodeConstraint(c['id'])
         }
       }
     })
@@ -568,15 +579,24 @@ RED.dnr = (function() {
    * Constraints and Nodes are Many to Many relationship
    * @param {constraint} c - The constraint being applyed to 
    */
-  function setNodeConstraint(c){
+  function setNodeConstraint(cid){
+    var c
+    for (var i = 0; i < constraints.length; i++){
+      if (cid === constraints[i].id){
+        c = constraints[i]
+        break
+      }
+    } 
+
+    if (!c){
+      return
+    }
+
     var appliedTo = 0;
 
     d3.selectAll('.node_selected').each(function(node){
       if (!node['constraints'])
         node['constraints'] = {}
-
-      if (node.constraints[c.id])
-        return
 
       node.constraints[c.id] = c
       redrawConstraints(d3.select(this.parentNode))
@@ -619,8 +639,8 @@ RED.dnr = (function() {
 
     var nodeConstraints = [];
 
-    for (c in d.constraints){
-      if (!d.constraints.hasOwnProperty(c))
+    for (var c in d.constraints){
+      if (!d.constraints.hasOwnProperty(c) || c === 'link')
         continue;
 
       nodeConstraints.push(d.constraints[c]);
