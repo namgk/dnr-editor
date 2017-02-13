@@ -1,6 +1,6 @@
 {
   "name": "dnr-editor",
-  "version": "0.16.8",
+  "version": "0.16.9",
   "description": "Flows editor for Distributed Node-RED",
   "homepage": "https://github.com/namgk/dnr-editor/blob/master/README.md",
   "license": "Apache-2.0",
@@ -51,6 +51,7 @@
     "json-stringify-safe": "5.0.1",
     "jsonata": "1.0.10",
     "media-typer": "0.3.0",
+    "mosca": "^2.2.0",
     "mqtt": "2.2.1",
     "mustache": "2.3.0",
     "node-red-node-email": "0.1.*",

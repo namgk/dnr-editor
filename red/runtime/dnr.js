@@ -1,20 +1,22 @@
 "use strict"
 
-var log = require("./log");
-var ws = require("ws");
-var util = require("./util");
+var log = require("./log")
+var ws = require("ws")
+var util = require("./util")
+var mosca = require('mosca')
 
-var connected = false;
-var activeDevices = {}; // deviceId --> ws, context, lastSeen, contributingNodes
-var wsServer;
+var connected = false
+var activeDevices = {} // deviceId --> ws, context, lastSeen, contributingNodes
+var activeBrokers = []
+var wsServer
 
-var server;
+var server
 var runtime
 
-var heartbeatTimer;
-var lastSentTime;
+var heartbeatTimer
+var lastSentTime
 
-var WS_KEEP_ALIVE = 15000;
+var WS_KEEP_ALIVE = 15000
 var DEVICE_INACTIVE = 30000
 
 var dnrInterface = require('dnr-interface')
@@ -44,12 +46,11 @@ function init(_server,_runtime) {
   wsServer = new ws.Server({
     server:server,
     path:path,
-    // Disable the deflate option due to this issue
-    //  https://github.com/websockets/ws/pull/632
-    // that is fixed in the 1.x release of the ws module
-    // that we cannot currently pickup as it drops node 0.10 support
     perMessageDeflate: false
   });
+
+  var mqttServ = mosca.Server({})
+  mqttServ.attachHttpServer(server)
 
   _runtime.adminApi.adminApp.post("/dnr/flows/:id", require("../api").auth.needsPermission("flows.read"), function(req,res) {
     var deployingFlow = req.params.id;
@@ -94,11 +95,36 @@ function init(_server,_runtime) {
     }
 
   @return:
+    [list of brokers]
+*/
+function assignBrokers(dnrSyncReq){
+  let deviceId = dnrSyncReq.deviceId
+  let flowId = dnrSyncReq.flowId
+  let device = activeDevices[deviceId]
+  let deviceContext = device.context
+  if (!deviceContext || !deviceContext.location || Object.keys(deviceContext.location) !== 2){
+    return [] // me as default?
+  }
+
+  // TODO: assign brokers intelligently
+  return []
+}
+
+/* 
+  @param dnrSyncReq: 
+    { 
+      deviceId: '1',
+      flowId: 'xxx',
+      dnrLinks: [ 
+        '54236bf5.2703a4_0_1d58c765.938219-<linkState>',
+        '1d58c765.938219_0_6cd77d5e.6c54b4-<linkState>' 
+      ],
+      contributingNodes: ["54236bf5.2703a4"]
+    }
+
+  @return:
     {
-      dnrLinks: {
-        <link> : <topic>
-      },
-      brokers: []
+      <link> : <topic>
     }
 */
 function processDnrSyncRequest(dnrSyncReq){
@@ -236,7 +262,7 @@ function start(){
         return;
       }
 
-      console.log(msg)
+      // console.log(msg)
 
       if (msg.topic === TOPIC_REGISTER){
         device = msg.device
@@ -276,9 +302,10 @@ function start(){
         for (let k in dnrSyncReqs){
           let dnrSyncReq = dnrSyncReqs[k]
           let dnrLinksRes = processDnrSyncRequest(dnrSyncReq)
+          let dnrBrokers = assignBrokers(dnrSyncReq)
           resp.push({
             'dnrSyncReq': dnrSyncReq,
-            'dnrSyncRes': new DnrSyncRes(dnrLinksRes)
+            'dnrSyncRes': new DnrSyncRes(dnrLinksRes, dnrBrokers)
           })
         }
         ws.send(JSON.stringify({
