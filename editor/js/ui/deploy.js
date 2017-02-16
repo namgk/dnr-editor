@@ -326,7 +326,7 @@ RED.deploy = (function() {
                 data.rev = RED.nodes.version();
             }
 
-            RED.dnr.addLinkConstraintsToData(data);
+            RED.dnr.correctLinkConstraints(data);
 
             $.ajax({
                 url:"flows",

@@ -134,12 +134,11 @@ function processDnrSyncRequest(dnrSyncReq){
   let contributingNodes = dnrSyncReq.contributingNodes
 
   activeDevices[deviceId].contributingNodes = contributingNodes
-
   var dnrLinksResponse = {}
 
   for (let dnrLink of dnrLinks){
     let link = dnrLink.split('-')[0]
-    let linkState = dnrLink.split('-')[1]
+    let linkState = parseInt(dnrLink.split('-')[1])
     let linkType
     
     let sourceId = link.split('_')[0]
@@ -155,12 +154,10 @@ function processDnrSyncRequest(dnrSyncReq){
 
       linkType = node.constraints.link[sourcePort + '_' + destId]
     }
-
     let commTopic
     if (linkState === dnrInterface.Context.FETCH_FORWARD){
       // find one device that host srcId
-      let mostFreeDevId = findDeviceForNode(sourceId)   
-           
+      let mostFreeDevId = findDeviceForNode(sourceId)
       if (!mostFreeDevId){
         continue
       }
@@ -183,7 +180,6 @@ function processDnrSyncRequest(dnrSyncReq){
     } else if (linkState === dnrInterface.Context.RECEIVE_REDIRECT){
       // find one device that host destId
       let mostFreeDevId = findDeviceForNode(destId)   
-           
       if (!mostFreeDevId){
         continue
       }
@@ -217,6 +213,10 @@ function findDeviceForNode(nodeId){
   let mostFreeDevId
   for (let dId in activeDevices){
     let device = activeDevices[dId]
+    if (!device.context || !device.context.freeMem){
+      continue
+    }
+
     let freeMem = device.context.freeMem
     
     let contribNodes = activeDevices[dId].contributingNodes

@@ -60,7 +60,6 @@ function initGui(){
 
 RED.dnr = (function() {
   var constraints = [];
-  var linkConstraints = {};
 
   // location constraints GUI
   function mapInit(){
@@ -452,7 +451,15 @@ RED.dnr = (function() {
     var midX = (d.x1+d.x2) / 2
     var midY = (d.y1+d.y2) / 2
 
-    linkConstraints[source.id + '_' + sourcePort + '_' + target.id] = linkType
+    if (!source['constraints']){
+      source['constraints'] = {};
+    }
+    var sourceConstraints = source.constraints
+    if (!sourceConstraints.link){
+      sourceConstraints.link = {}
+    }
+
+    sourceConstraints.link[sourcePort + '_' + target.id] = linkType
 
     link.selectAll('.link_constraint_group').remove();
     link.append("svg:g")
@@ -464,8 +471,7 @@ RED.dnr = (function() {
       .on("click", (function(){
         return function(){
           link.selectAll('.link_constraint_group').remove();
-          delete linkConstraints[source.id + 
-                      '_' + sourcePort + '_' + target.id]
+          delete sourceConstraints.link[sourcePort + '_' + target.id]
           RED.nodes.dirty(true);
         }
       })())
@@ -488,10 +494,6 @@ RED.dnr = (function() {
     try {
       sourceLink = source.constraints.link
       linkType = sourceLink[sourcePort + '_' + target.id]
-      // clear the node's constraint for editor
-      delete sourceLink[sourcePort + '_' + target.id]
-      // set the temporary constraints store
-      linkConstraints[source.id + '_' + sourcePort + '_' + target.id] = linkType
     } catch(e){}
     
     if (!linkType){
@@ -508,46 +510,39 @@ RED.dnr = (function() {
       .on("click", (function(){
         return function(){
           link.selectAll('.link_constraint_group').remove();
-          // delete sourceLink[sourcePort + '_' + target.id]
-          delete linkConstraints[source.id + 
-                      '_' + sourcePort + '_' + target.id]
+          delete sourceLink[sourcePort + '_' + target.id]
           RED.nodes.dirty(true);
         }
       })())
   }
 
-  // called on deploying to send link constraints to server
-  function addLinkConstraintsToData(data){
-    var flows = data.flows
-    for (var o in flows){
-      var obj = flows[o]
+  // called on deploying to correct link constraints before sending to server
+  // this is necessary in the case that a dest node is deleted but
+  // link constraints are still present in source node
+  function correctLinkConstraints(data){
+    var nodes = data.flows.filter(function(f){
+      return f.wires
+    })
 
-      if (!obj.wires){
+    var nodeIds = nodes.map(function(f){
+      return f.id
+    })
+
+    for (var i = 0; i < nodes.length; i++){
+      var node = nodes[i]
+      if (!node.constraints || !node.constraints.link){
         continue
       }
 
-      for (var i = 0; i< obj.wires.length; i++){
-        for (var j = 0; j < obj.wires[i].length; j++){
-          if (!obj.wires[i][j]){
-            continue
-          }
-
-          var link = obj.id + '_' + i + '_' + obj.wires[i][j]
-          var linkType = linkConstraints[link]
-          if (!linkType){
-            continue
-          }
-
-          if (!obj.constraints){
-            obj.constraints = {}
-          }
-
-          if (!obj.constraints.link){
-            obj.constraints.link = {}
-          }
-
-          obj.constraints.link[i + '_' + obj.wires[i][j]] = linkType
+      var link = node.constraints.link
+      for (var linkKey in link){
+        if (!nodeIds.includes(linkKey.split('_')[1])){
+          delete link[linkKey]
         }
+      }
+
+      if (Object.keys(link).length === 0){
+        delete node.constraints.link
       }
     }
   }
@@ -726,7 +721,7 @@ RED.dnr = (function() {
   // }
 
   return {
-     addLinkConstraintsToData: addLinkConstraintsToData,
+     correctLinkConstraints: correctLinkConstraints,
      appendLinkConstraint: appendLinkConstraint,
      redrawLinkConstraint: redrawLinkConstraint,
      prepareConstraints: prepareConstraints,
