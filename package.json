@@ -1,6 +1,6 @@
 {
   "name": "dnr-editor",
-  "version": "0.16.9",
+  "version": "0.16.10",
   "description": "Flows editor for Distributed Node-RED",
   "homepage": "https://github.com/namgk/dnr-editor/blob/master/README.md",
   "license": "Apache-2.0",
@@ -19,6 +19,9 @@
   },
   "contributors": [
     {
+      "name": "Nam Giang"
+    },
+    {
       "name": "Nick O'Leary"
     },
     {
@@ -26,10 +29,10 @@
     }
   ],
   "keywords": [
-    "editor",
-    "messaging",
+    "distributed node red",
+    "node red",
     "iot",
-    "flow"
+    "distributed"
   ],
   "dependencies": {
     "basic-auth": "1.1.0",

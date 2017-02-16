@@ -213,13 +213,13 @@ function findDeviceForNode(nodeId){
   let mostFreeDevId
   for (let dId in activeDevices){
     let device = activeDevices[dId]
-    if (!device.context || !device.context.freeMem){
+    if (!device.context || !device.context.freeMem || !device.contributingNodes){
       continue
     }
 
     let freeMem = device.context.freeMem
     
-    let contribNodes = activeDevices[dId].contributingNodes
+    let contribNodes = device.contributingNodes
     if (contribNodes.includes(nodeId)){
       if (freeMem > mostFreeMem){
         mostFreeMem = freeMem

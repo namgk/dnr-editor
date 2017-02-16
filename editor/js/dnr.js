@@ -66,14 +66,48 @@ RED.dnr = (function() {
     var VANCOUVER = {lat: 49.269801, lng: -123.109489}
     var currentOverlay = null
     var overlayVisible = false
+    var rectangle
+
+    var map = new google.maps.Map(document.getElementById('map'), {
+      center: VANCOUVER, 
+      zoom: 10
+    })
 
     $("#node-dialog-map").dialog({
       title:"Set location constraint",
       modal: true,
       autoOpen: false,
       width: 500,
-      open: function(e) {},
-      close: function(e) {},
+      open: function(e) {
+        var locationConstraint = $('#location-constraint').val()
+        if (!locationConstraint){
+          clearOverlay()
+        }
+
+        locationConstraint = JSON.parse(locationConstraint)
+        var north = locationConstraint.ne[0]
+        var south = locationConstraint.sw[0]
+        var east = locationConstraint.ne[1]
+        var west = locationConstraint.sw[1]
+
+        rectangle = new google.maps.Rectangle({
+          map: map,
+          bounds: {
+            north: north,
+            south: south,
+            east: east,
+            west: west
+          }
+        })
+
+        map.setCenter({
+          lat: south, 
+          lng: west
+        })
+      },
+      close: function(e) {
+        clearOverlay()
+      },
       buttons: 
       {
         Set: function (){
@@ -102,11 +136,6 @@ RED.dnr = (function() {
           $(this).dialog( "close" );
         }
       }
-    })
-
-    var map = new google.maps.Map(document.getElementById('map'), {
-      center: VANCOUVER, 
-      zoom: 10
     })
 
     var drawingManager = new google.maps.drawing.DrawingManager({
@@ -147,6 +176,9 @@ RED.dnr = (function() {
         currentOverlay.setMap(null)
         overlayVisible = false
       }
+      if (rectangle){
+        rectangle.setMap(null)
+      }
     }
   }
 
@@ -164,10 +196,11 @@ RED.dnr = (function() {
       autoOpen: false,
       width: 500,
       open: function(e) {
+        $(this).dialog('option', 'title', 'Create a node requirement');
+        $("#createConstraintBtn").text('Create')
+
         var constraintId = $('#constraint-id').val()
         if (!constraintId){
-          $(this).dialog('option', 'title', 'Create a node requirement');
-          $("#createConstraintBtn").text('Create')
           return
         }
 
