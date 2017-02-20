@@ -132,6 +132,11 @@ function processDnrSyncRequest(dnrSyncReq){
   let flowId = dnrSyncReq.flowId
   let dnrLinks = dnrSyncReq.dnrLinks
   let contributingNodes = dnrSyncReq.contributingNodes
+  
+  let flow = runtime.nodes.getFlow(flowId)
+  if (!flow){
+    return {}
+  }
 
   activeDevices[deviceId].contributingNodes = contributingNodes
   var dnrLinksResponse = {}
@@ -145,14 +150,14 @@ function processDnrSyncRequest(dnrSyncReq){
     let sourcePort = link.split('_')[1]
     let destId = link.split('_')[2]
 
-    // based on this flow
-    let flow = runtime.nodes.getFlow(flowId)
     for (let node of flow.nodes){
       if (node.id !== sourceId){
         continue
       }
 
-      linkType = node.constraints.link[sourcePort + '_' + destId]
+      linkType = node.constraints.link ? 
+        node.constraints.link[sourcePort + '_' + destId] :
+        'NN'
     }
     let commTopic
     if (linkState === dnrInterface.Context.FETCH_FORWARD){
@@ -281,7 +286,7 @@ function start(){
         log.info('new device connected - ' + device)
         runtime.adminApi.comms.publish('devices/connected', {id: device}, false)
 
-        activeDevices[device] = {ws:ws}
+        activeDevices[device] = {ws:ws, lastSeen: Date.now()}
       }
 
       if (msg.topic === TOPIC_DNR_HB){
@@ -322,63 +327,16 @@ function start(){
 
   lastSentTime = Date.now();
 
-  var test = [
-    {
-      topic: 'devices/connected',
-      data: {
-        id: '1'
-      }
-    },
-    {
-      topic: 'devices/connected',
-      data: {
-        id: '2'
-      }
-    },
-    {
-      topic: 'devices/disconnected',
-      data: {
-        id: '2'
-      }
-    },
-    {
-      topic: 'devices/heartbeat',
-      data: {
-        id: '1',
-        lastSeen: Date.now(),
-        context: {
-          freeMem: 512
-        }
-      }
-    },
-    {
-      topic: 'devices/heartbeat',
-      data: {
-        id: '1',
-        lastSeen: Date.now(),
-        context: {
-          freeMem: 111
-        }
-      }
-    },
-    {
-      topic: 'devices/disconnected',
-      data: {
-        id: '1'
-      }
-    }
-  ]
-
-  var testIdx = 0
-
   heartbeatTimer = setInterval(function() {
-    // runtime.adminApi.comms.publish(test[testIdx % test.length].topic, test[testIdx % test.length].data, false)
-    // testIdx++
-
-
     var now = Date.now();
     if (now-lastSentTime > WS_KEEP_ALIVE) {
       broadcast(TOPIC_DNR_HB,lastSentTime);
+    }
+    for (let dId in activeDevices){
+      if (now - activeDevices[dId].lastSeen > 60000){ // not seen in the last minute
+        runtime.adminApi.comms.publish('devices/disconnected', {id: dId}, false)
+        delete activeDevices[dId]
+      }
     }
   }, WS_KEEP_ALIVE);
 }

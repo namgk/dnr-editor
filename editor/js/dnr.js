@@ -72,6 +72,17 @@ RED.dnr = (function() {
       center: VANCOUVER, 
       zoom: 10
     })
+    
+    var drawingManager = new google.maps.drawing.DrawingManager({
+      drawingMode: google.maps.drawing.OverlayType.MARKER,
+      drawingControl: true,
+      drawingControlOptions: {
+        position: google.maps.ControlPosition.TOP_CENTER,
+        drawingModes: ['rectangle']
+      }
+    })
+
+    drawingManager.setMap(map)
 
     $("#node-dialog-map").dialog({
       title:"Set location constraint",
@@ -79,9 +90,12 @@ RED.dnr = (function() {
       autoOpen: false,
       width: 500,
       open: function(e) {
+        drawingManager.setDrawingMode(google.maps.drawing.OverlayType.RECTANGLE)
+        google.maps.event.trigger(map, 'resize') // to make map visible
         var locationConstraint = $('#location-constraint').val()
         if (!locationConstraint){
           clearOverlay()
+          return
         }
 
         locationConstraint = JSON.parse(locationConstraint)
@@ -138,17 +152,6 @@ RED.dnr = (function() {
       }
     })
 
-    var drawingManager = new google.maps.drawing.DrawingManager({
-      drawingMode: google.maps.drawing.OverlayType.MARKER,
-      drawingControl: true,
-      drawingControlOptions: {
-        position: google.maps.ControlPosition.TOP_CENTER,
-        drawingModes: ['rectangle']
-      }
-    })
-
-    drawingManager.setMap(map)
-
     google.maps.event.addListener(map, 'click', function(event) {
       clearOverlay()
     });
@@ -161,14 +164,6 @@ RED.dnr = (function() {
 
     $('#location-constraint').click(function() { 
       $("#node-dialog-map").dialog( "open" )
-      if (overlayVisible){
-        map.setCenter({
-          lat: currentOverlay.getBounds().getCenter().lat(), 
-          lng: currentOverlay.getBounds().getCenter().lng()})
-      }
-      
-      google.maps.event.trigger(map, 'resize') // to make map visible
-      drawingManager.setDrawingMode(google.maps.drawing.OverlayType.RECTANGLE)
     })
 
     function clearOverlay(){
@@ -910,7 +905,12 @@ RED.sidebar.devices = (function() {
         var ctx = JSON.stringify(device.context)
         devices[device.id].context = device.context
         devices[device.id].lastSeen = device.lastSeen
-        devices[device.id].elements.lastSeenText.html(device.lastSeen)
+        var lastSeenTime = new Date(device.lastSeen)
+        devices[device.id].elements.lastSeenText.html(
+          lastSeenTime.getHours() + ':' +
+          lastSeenTime.getMinutes() + ':' +
+          lastSeenTime.getSeconds()
+        )
         devices[device.id].elements.headerRow.attr("title", ctx)
         updateMap()
       }
