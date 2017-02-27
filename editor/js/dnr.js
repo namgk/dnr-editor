@@ -816,7 +816,7 @@ RED.sidebar.devices = (function() {
           //.css("cursor","pointer")
 
           var titleRow = $('<div class="device-meta device-id"><i class="fa fa-podcast" style="margin-right: 5px;"></i></div>').appendTo(headerRow);
-          $('<span>').html(entry.id).appendTo(titleRow);
+          $('<span>').html(entry.name).appendTo(titleRow);
           var metaRow = $('<div class="device-meta device-lastSeen"><i class="fa fa-clock-o" style="margin-right: 5px;"></i></div>').appendTo(headerRow);
 
           var lastSeenText = $('<span>').html(entry.lastSeen).appendTo(metaRow)
@@ -921,6 +921,7 @@ RED.sidebar.devices = (function() {
     if (!devices[device.id]){
       devices[device.id] = {
         id: device.id,
+        name: device.name,
         lastSeen: Date.now(),
         status: 'connected'
       }

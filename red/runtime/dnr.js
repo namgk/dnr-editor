@@ -17,7 +17,7 @@ var heartbeatTimer
 var lastSentTime
 
 var WS_KEEP_ALIVE = 15000
-var DEVICE_INACTIVE = 30000
+var DEVICE_INACTIVE = 5000*3
 
 var dnrInterface = require('dnr-interface')
 var DnrSyncReq = dnrInterface.DnrSyncReq
@@ -26,8 +26,7 @@ var DnrSyncRes = dnrInterface.DnrSyncRes
 var TOPIC_DNR_HB = dnrInterface.TOPIC_DNR_HB
 var TOPIC_REGISTER = dnrInterface.TOPIC_REGISTER
 var TOPIC_REGISTER_ACK = dnrInterface.TOPIC_REGISTER_ACK
-var TOPIC_DNR_SYN_REQ = dnrInterface.TOPIC_DNR_SYN_REQ
-var TOPIC_DNR_SYN_RES = dnrInterface.TOPIC_DNR_SYN_RES
+var TOPIC_REGISTER_REQ = 'register_req'
 var TOPIC_DNR_SYN_RESS = dnrInterface.TOPIC_DNR_SYN_RESS
 var TOPIC_FLOW_DEPLOYED = dnrInterface.TOPIC_FLOW_DEPLOYED
 
@@ -100,6 +99,7 @@ function init(_server,_runtime) {
 function assignBrokers(dnrSyncReq){
   let deviceId = dnrSyncReq.deviceId
   let flowId = dnrSyncReq.flowId
+
   let device = activeDevices[deviceId]
   let deviceContext = device.context
   if (!deviceContext || !deviceContext.location || Object.keys(deviceContext.location) !== 2){
@@ -130,14 +130,14 @@ function assignBrokers(dnrSyncReq){
 function processDnrSyncRequest(dnrSyncReq){
   let deviceId = dnrSyncReq.deviceId
   let flowId = dnrSyncReq.flowId
-  let dnrLinks = dnrSyncReq.dnrLinks
-  let contributingNodes = dnrSyncReq.contributingNodes
-  
   let flow = runtime.nodes.getFlow(flowId)
   if (!flow){
     return {}
   }
 
+  let dnrLinks = dnrSyncReq.dnrLinks
+  let contributingNodes = dnrSyncReq.contributingNodes
+  
   activeDevices[deviceId].contributingNodes = contributingNodes
   var dnrLinksResponse = {}
 
@@ -155,9 +155,13 @@ function processDnrSyncRequest(dnrSyncReq){
         continue
       }
 
-      linkType = node.constraints.link ? 
-        node.constraints.link[sourcePort + '_' + destId] :
-        'NN'
+      if (!node.constraints || !node.constraints.link){
+        log.warn('device asking for a dnr link that is NN - ' + dnrLink)
+        linkType = 'NN'
+      } else {
+        linkType = node.constraints.link[sourcePort + '_' + destId]
+      }
+
     }
     let commTopic
     if (linkState === dnrInterface.Context.FETCH_FORWARD){
@@ -248,56 +252,50 @@ function start(){
     let device = 'annonymous'
 
     ws.on('close',function() {
-      log.info(device + ' disconnected')
-      runtime.adminApi.comms.publish('devices/disconnected', {id: device}, false)
-      delete activeDevices[device]
+      log.info('ws connection closed - ' + device)
+      unregisterDevice(device, true)
     });
 
     ws.on('error', function(err) {
       log.warn( 'dnr comms error: ' + err.toString() );
-      delete activeDevices[device]
+      unregisterDevice(device)
     });
 
     ws.on('message', function(data,flags) {
-      var msg = null;
+      console.log(data)
+      if (ws.readyState != 1){
+        return
+      }
+
       try {
-        msg = JSON.parse(data);
+        var msg = JSON.parse(data);
       } catch(err) {
         log.warn( 'dnr comms error: ' + err.toString() );
         return;
       }
 
-      // console.log(msg)
-
       if (msg.topic === TOPIC_REGISTER){
-        device = msg.device
-        
-        if (activeDevices[device]){
-          device = getUniqueId()
-          ws.send(JSON.stringify({
-            'topic': TOPIC_REGISTER_ACK, 'idOk': false, 'id': device
-          }))
-        } else {
-          ws.send(JSON.stringify({
-            'topic': TOPIC_REGISTER_ACK, 'idOk': true, 'id': device
-          }))
-        }
-
-        log.info('new device connected - ' + device)
-        runtime.adminApi.comms.publish('devices/connected', {id: device}, false)
-
-        activeDevices[device] = {ws:ws, lastSeen: Date.now()}
+        device = getUniqueId()
+        registerDevice(device, ws, msg)
+        ws.send(JSON.stringify({
+          'topic': TOPIC_REGISTER_ACK,
+          'id': device
+        }))
       }
 
       if (msg.topic === TOPIC_DNR_HB){
-        activeDevices[msg.device].context = msg.context
-        activeDevices[msg.device].lastSeen = Date.now()
-        runtime.adminApi.comms.publish('devices/heartbeat', {
-          id: msg.device,
-          lastSeen: Date.now(),
-          context: msg.context
-        }, false)
+        device = msg.deviceId
+        // request for reregistering this device
+        if (!activeDevices[device]){
+          ws.send(JSON.stringify({
+            'topic': TOPIC_REGISTER_REQ
+          }))
+          return
+        }
 
+        updateDevice(device, msg.context)
+
+        // processing any coordination requests
         let dnrSyncReqs = msg.dnrSyncReqs
         if (!dnrSyncReqs || Object.keys(dnrSyncReqs).length === 0){
           return
@@ -306,6 +304,10 @@ function start(){
         let resp = []
         for (let k in dnrSyncReqs){
           let dnrSyncReq = dnrSyncReqs[k]
+          if (!dnrSyncReq.deviceId || dnrSyncReq.deviceId !== device){
+            log.warn('id in dnrSyncReq not match with heartbeat request - ' + dnrSyncReq.deviceId + ' vs ' + device)
+            continue
+          }
           let dnrLinksRes = processDnrSyncRequest(dnrSyncReq)
           let dnrBrokers = assignBrokers(dnrSyncReq)
           resp.push({
@@ -318,27 +320,64 @@ function start(){
           'dnrSync' : resp
         }))
       }
-    });
-  });
+    })
+  })
 
   wsServer.on('error', function(err) {
-    log.warn( 'dnr comms error: ' + err.toString() );
-  });
+    log.warn( 'dnr comms error: ' + err.toString() )
+  })
 
-  lastSentTime = Date.now();
+  lastSentTime = Date.now()
 
   heartbeatTimer = setInterval(function() {
     var now = Date.now();
     if (now-lastSentTime > WS_KEEP_ALIVE) {
-      broadcast(TOPIC_DNR_HB,lastSentTime);
+      broadcast(TOPIC_DNR_HB,lastSentTime)
     }
     for (let dId in activeDevices){
-      if (now - activeDevices[dId].lastSeen > 60000){ // not seen in the last minute
-        runtime.adminApi.comms.publish('devices/disconnected', {id: dId}, false)
-        delete activeDevices[dId]
+      if (now - activeDevices[dId].lastSeen > DEVICE_INACTIVE){
+        unregisterDevice(dId)
       }
     }
-  }, WS_KEEP_ALIVE);
+  }, WS_KEEP_ALIVE)
+}
+
+function updateDevice(d, context){
+  if (!activeDevices[d]){
+    log.warn('bug alert! - updating a device that is not there')
+    return
+  }
+  activeDevices[d].context = context
+  activeDevices[d].lastSeen = Date.now()
+  runtime.adminApi.comms.publish('devices/heartbeat', {
+    id: d,
+    lastSeen: Date.now(),
+    context: context
+  }, false)
+}
+
+function registerDevice(d, ws, msg){
+  if (activeDevices[d]){
+    log.warn('bug alert! - registering a device that is already there')
+    return   
+  }
+  log.info('new device connected - ' + d)
+  activeDevices[d] = {ws: ws, lastSeen: Date.now(), name: msg.deviceName}
+  runtime.adminApi.comms.publish('devices/connected', {id: d, name: msg.deviceName}, false)
+}
+
+function unregisterDevice(d, closed){
+  if (!activeDevices[d]){
+    return
+  }
+  log.info('device disconnected - ' + d)
+
+  if (!closed){
+    activeDevices[d].ws.close()
+  }
+
+  delete activeDevices[d]
+  runtime.adminApi.comms.publish('devices/disconnected', {id: d}, false)
 }
 
 function stop() {
