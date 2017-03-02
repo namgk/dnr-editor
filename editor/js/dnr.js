@@ -38,8 +38,8 @@ function initGui(){
     <div class="form-row">\
         <label for="constraint-id" ><i class="fa"></i>Constraint Id:</label>\
         <input type="text" id="constraint-id">\
-        <label for="device-id" ><i class="fa"></i>Device ID:</label>\
-        <input type="text" id="device-id" placeholder="device s application scope unique ID">\
+        <label for="device-name" ><i class="fa"></i>Device Name:</label>\
+        <input type="text" id="device-name" placeholder="device s application scope unique ID">\
         <label><i class="fa"></i>Location:</label>\
         <input type="text" id="location-constraint">\
         <label for="memory-constraint"><i class="fa"></i>Min memory (MB):</label>\
@@ -211,8 +211,8 @@ RED.dnr = (function() {
         }
 
         // populate fields with existing value
-        if (c['deviceId']){
-          $( "#device-id" ).val(c['deviceId'])
+        if (c['deviceName']){
+          $( "#device-name" ).val(c['deviceName'])
         }
         if (c['location']){
           $( "#location-constraint" ).val(c['location'])
@@ -331,7 +331,7 @@ RED.dnr = (function() {
 
   function resetConstraintsDialog(){
     $("#constraint-id").val("")
-    $("#device-id").val("")
+    $("#device-name").val("")
     $("#location-constraint").val("")
     $("#memory-constraint").val("")
     $("#cores-constraint").val("")
@@ -373,7 +373,7 @@ RED.dnr = (function() {
         return;
     }
         
-    var deviceId = $( "#device-id" ).val();
+    var deviceName = $( "#device-name" ).val();
     var location = $( "#location-constraint" ).val();
     var memory = $( "#memory-constraint" ).val();
     var cores = $( "#cores-constraint" ).val();
@@ -397,8 +397,8 @@ RED.dnr = (function() {
       id:constraintId
     }
 
-    if (deviceId)
-        creatingConstraint['deviceId'] = deviceId;
+    if (deviceName)
+        creatingConstraint['deviceName'] = deviceName;
     if (location)
         creatingConstraint['location'] = location;
     if (memory)
@@ -815,7 +815,7 @@ RED.sidebar.devices = (function() {
           var headerRow = $('<div class="device-header">').appendTo(container)
           //.css("cursor","pointer")
 
-          var titleRow = $('<div class="device-meta device-id"><i class="fa fa-podcast" style="margin-right: 5px;"></i></div>').appendTo(headerRow);
+          var titleRow = $('<div class="device-meta device-name"><i class="fa fa-podcast" style="margin-right: 5px;"></i></div>').appendTo(headerRow);
           $('<span>').html(entry.name).appendTo(titleRow);
           var metaRow = $('<div class="device-meta device-lastSeen"><i class="fa fa-clock-o" style="margin-right: 5px;"></i></div>').appendTo(headerRow);
 

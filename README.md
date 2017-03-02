@@ -1,17 +1,15 @@
 # Distributed Node-RED (DNR) Editor
 
-Node-RED is a visual tool for wiring the Internet of Things.  The Distributed Node-RED (DNR) project extends Node-RED to support flows that can be distributed between devices. DNR works with a cluster of vanilla Node-RED devices and a Node-RED Coordinator called DNR Editor, a modified version of Node-RED. 
+Node-RED is a visual tool for wiring the Internet of Things.  The Distributed Node-RED (DNR) project extends Node-RED to support flows that can be distributed between devices. DNR works with a cluster of vanilla Node-RED instances and a coordinator called DNR Editor is used to coordinate the participating Node-RED instances. 
 
 Overall architecture:
 [![Distributed Node-RED](https://snag.gy/vdQ2jn.jpg)](#features)
 
-DNR Editor is a Node-RED flows editor modified to support design of distributed flows. Once new flows are deployed, they are not started but distributed to participating Node RED instances in the cluster and deployed there.
+DNR Editor is a Node-RED flows editor modified to support the design of distributed flows. Once new flows are deployed, they are not started but distributed to participating Node RED instances in the cluster and deployed there.
 
-To connect a Node RED instance to a DNR cluster, install node-red-contrib-dnr node on the instance and follow the registration process in the quick start section bellow.
+A Node RED instance can be connected to a DNR cluster by installing *node-red-contrib-dnr*, a special Node RED node designed for DNR.
 
-Node-red-contrib-dnr module consists of a special node called DNR Daemon node, which acts as a local agent that connect the local Node-RED instance to the DNR cluster. DNR-Daemon node gets the DNR flows from DNR Editor, transforms it to a compatible Node-RED flow and deploys the "dnr-ized" flow to the local Node-RED instance . 
-
-This is a research project funded by NSERC that aims at designing a distributed application platform for the Internet of Things and Fog Computing.
+*Node-red-contrib-dnr* module consists of a special node called *DNR Daemon* node, which acts as a local agent that connects the local Node-RED instance to the DNR cluster. This node gets the DNR flows from DNR Editor, transforms it to a compatible Node-RED flow and deploys the "dnr-ized" flow to the local Node-RED instance.
 
 A sample DNR flow that runs on several Raspberry Pis and a Cloud server:
 
@@ -23,10 +21,6 @@ The idea of DNR:
 * a Node-RED node can be configured so that it only run on certain devices by defining one or more constraints assocciate to it. The constraints will be matched against the device's capability/property definition.
 * if a node is not to be run on a device due to the device not meeting the required constraints, messages that are sent to it will be intercepted and finally dropped, or redirected to an external Node RED instance. 
 * mechanism for all participating devices to download the distributed flow from a 'DNR Operator' (where run dnr-editor) such as a cloud server.
-
-For more information on our initial ideas, see these [presentation](http://www.slideshare.net/MichaelBlackstock/wo-t-2014-blackstock-2), [presentation](http://www.slideshare.net/namnhong/developing-io-t-applications-in-the-fog-a-distributed-dataflow-approach) and assocated [paper](http://www.webofthings.org/wp-content/uploads/2009/07/wot20140_submission_1.pdf), [paper](https://www.researchgate.net/publication/290435774_Developing_IoT_Applications_in_the_Fog_a_Distributed_Dataflow_Approach). 
-
-An initial version of DNR is also available at <https://github.com/mblackstock/node-red-contrib/> and at <https://github.com/namgk/distributed-node-red> where a single installation of modified Node-RED run on participating devices. In order to reduce the effort required to augment the vanilla Node-RED as well as to allow users to use vanilla Node-RED instead of an augmented one, a special node is created called DNR-Daemon (node-red-contrib-dnr) which downloads, converts DNR flows into flows that vanilla Node-RED can understand, and install them to the local vanilla Node RED where it run.
 
 ## Quick Start
 
@@ -67,7 +61,11 @@ More tutorials on wiki page.
 
 For support or questions related to DNR, please contact [@mblackstock](http://twitter.com/mblackstock) or Nam Giang at <kyng@ece.ubc.ca>.
 
-## Original Node-RED
+For more information on the initial ideas, see these [presentation](http://www.slideshare.net/MichaelBlackstock/wo-t-2014-blackstock-2), [presentation](http://www.slideshare.net/namnhong/developing-io-t-applications-in-the-fog-a-distributed-dataflow-approach) and assocated [paper](http://www.webofthings.org/wp-content/uploads/2009/07/wot20140_submission_1.pdf), [paper](https://www.researchgate.net/publication/290435774_Developing_IoT_Applications_in_the_Fog_a_Distributed_Dataflow_Approach). 
+
+An initial version of DNR is also available at <https://github.com/mblackstock/node-red-contrib/> and at <https://github.com/namgk/distributed-node-red> where a single installation of modified Node-RED run on participating devices. In order to reduce the effort required to augment the vanilla Node-RED as well as to allow users to use vanilla Node-RED instead of an augmented one, a special node is created called DNR-Daemon (node-red-contrib-dnr) which downloads, converts DNR flows into flows that vanilla Node-RED can understand, and install them to the local vanilla Node RED where it run.
+
+## Acknowledgement
 
 Node-RED is a project of the [JS Foundation](http://js.foundation).
 
@@ -76,5 +74,6 @@ It was created by [IBM Emerging Technology](https://www.ibm.com/blogs/emerging-t
 * Nick O'Leary [@knolleary](http://twitter.com/knolleary)
 * Dave Conway-Jones [@ceejay](http://twitter.com/ceejay)
 
-
 DNR Editor is an extension of Node-RED inspired by Mike Blackstock [@mblackstock](http://twitter.com/mblackstock) and created by Nam Giang <kyng@ece.ubc.ca>
+
+This is a research project funded by NSERC that aims at designing a distributed application platform for the Internet of Things and Fog Computing.
