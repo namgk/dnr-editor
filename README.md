@@ -1,12 +1,21 @@
 # Distributed Node-RED (DNR) Editor
 
-Node-RED is a visual tool for wiring the Internet of Things.  The Distributed Node-RED (DNR) project extends Node-RED to support flows that can be distributed between devices. 
+Node-RED is a visual tool for wiring the Internet of Things.  The Distributed Node-RED (DNR) project extends Node-RED to support flows that can be distributed between devices. DNR works with a cluster of vanilla Node-RED devices and a Node-RED Coordinator called DNR Editor, a modified version of Node-RED. 
 
-DNR Editor is a Node-RED flows editor modified to support design of distributed flows. Once new flows are deployed, rather than the flows being started, a notification is published to all participating Node RED instances about new flows available. 
+Overall architecture:
+[![Distributed Node-RED](https://snag.gy/vdQ2jn.jpg)](#features)
 
-Participating Node RED instances (with node-red-contrib-dnr installed) get notified and pull the new flows. DNR-Daemon node parses the flows based on flows constraints and redeploy the DNR-ized flows onto local Node-RED instance on which it run. This project is work in progress.
+DNR Editor is a Node-RED flows editor modified to support design of distributed flows. Once new flows are deployed, they are not started but distributed to participating Node RED instances in the cluster and deployed there.
 
-[![Distributed Node-RED](https://snag.gy/Hq1A4d.jpg)](#features)
+To connect a Node RED instance to a DNR cluster, install node-red-contrib-dnr node on the instance and follow the registration process in the quick start section bellow.
+
+Node-red-contrib-dnr module consists of a special node called DNR Daemon node, which acts as a local agent that connect the local Node-RED instance to the DNR cluster. DNR-Daemon node gets the DNR flows from DNR Editor, transforms it to a compatible Node-RED flow and deploys the "dnr-ized" flow to the local Node-RED instance . 
+
+This is a research project funded by NSERC that aims at designing a distributed application platform for the Internet of Things and Fog Computing.
+
+A sample DNR flow that runs on several Raspberry Pis and a Cloud server:
+
+![Sample DNR Flow](https://snag.gy/W0LzZb.jpg)
 
 The idea of DNR:
 
@@ -21,24 +30,40 @@ An initial version of DNR is also available at <https://github.com/mblackstock/n
 
 ## Quick Start
 
-1. git clone
-2. cd node-red
-3. npm install
-4. grunt build
-5. node red
-6. Open <http://localhost:1818> (note the port used)
-7. Design DNR flows.
+Requirements: several Raspberry Pi (participating Node-RED, just for fun, could be multiple instances of Node-RED in a single machine); a computer to run DNR Editor (the coordinator)
 
-An example of DNR flows:
+### Setup DNR Editor 
+Similar to Node-RED: git clone, npm install, grunt build, and start by "node red"
 
+DNR Editor will run by default at :1818 port.
+
+### Connect Node RED to the cluster:
+1. For each Node RED instance, install *node-red-contrib-dnr* nodes: either using GUI->Menu->Manage Pallete->Install or go to ~/.node-red and do *npm install node-red-contrib-dnr*
+2. Getting the *Seed flow*: go to DNR Editor at http://localhost:1818, GUI->Menu->DNR->Export DNR Seed->Export to clipboard
+3. Import the *Seed flow* on each participating Node RED: GUI->Import->Clipboard->Paste(CMD/CTRL V)->Import
+4. Configure the imported *Seed flow*: configure the DNR Editor's target (so that the daemon can connect to) and local Node RED's informration (credentials if local Node RED is password protected, device's name, and possibly location)
+5. Deploy the *Seed flow*: click Deploy.
+
+After this, these connected devices can be seen on the Device Monitor on DNR Editor: GUI->Menu->DNR->Show devices
+
+Device monitor
+
+![DNR Device Monitor](https://snag.gy/a9VbUA.jpg)
+
+### Sample flow
+A minimal sample DNR flow:
+
+![Minimal DNR Flow](https://snag.gy/6ZhjnK.jpg)
+
+Code:
 ```json
-[{"id":"b9579282.b5df7","type":"inject","z":"bda77274.01523","name":"","topic":"","payload":"","payloadType":"date","repeat":"","crontab":"","once":false,"x":224,"y":286,"wires":[["68d99328.0a307c"]],"constraints":{"link":{"0_68c538d9.e3eb08":"N1"}}},{"id":"68d99328.0a307c","type":"function","z":"bda77274.01523","name":"demo","func":"\nreturn msg;","outputs":"2","noerr":0,"x":336,"y":368,"wires":[["fb7529ad.1bb348"],[]],"constraints":{"link":{"0_68c538d9.e3eb08":"11","1_eb1ce14f.29c99":"1N"},"In Vancouver, BC":{"id":"In Vancouver, BC","fill":"#25c6a1","text":"In Vancouver, BC"}}},{"id":"fb7529ad.1bb348","type":"debug","z":"bda77274.01523","name":"","active":true,"console":"false","complete":"false","x":500,"y":314,"wires":[]}]
+[{"id":"733a9ff3.9c766","type":"tab","label":"Flow 1"},{"id":"9d59c9cc.b67158","type":"inject","z":"733a9ff3.9c766","name":"","topic":"","payload":"","payloadType":"date","repeat":"","crontab":"","once":false,"x":188.95140075683594,"y":86.97222900390625,"wires":[["b5a1fcec.5b0c4"]],"constraints":{"on my mac":{"id":"on my mac","deviceName":"nam-mba","fill":"#f404e0","text":"on my mac"}}},{"id":"b5a1fcec.5b0c4","type":"debug","z":"733a9ff3.9c766","name":"","active":true,"console":"false","complete":"false","x":401.2812042236328,"y":125.0625,"wires":[],"constraints":{"pi17":{"id":"pi17","deviceName":"pi17","fill":"#5103c6","text":"pi17"}}}]
 ```
-
-Once the flows are deployed, a notification will be published to participating Node RED instances via DNR-Daemon nodes.
 
 ## Support
 Documentation on vanilla Node-RED can be found [here](http://nodered.org/docs/).
+
+More tutorials on wiki page.
 
 For support or questions related to DNR, please contact [@mblackstock](http://twitter.com/mblackstock) or Nam Giang at <kyng@ece.ubc.ca>.
 
@@ -52,4 +77,4 @@ It was created by [IBM Emerging Technology](https://www.ibm.com/blogs/emerging-t
 * Dave Conway-Jones [@ceejay](http://twitter.com/ceejay)
 
 
-DNR is an extension of Node-RED by Mike Blackstock [@mblackstock](http://twitter.com/mblackstock) and Nam Giang <kyng@ece.ubc.ca>
+DNR Editor is an extension of Node-RED inspired by Mike Blackstock [@mblackstock](http://twitter.com/mblackstock) and created by Nam Giang <kyng@ece.ubc.ca>
