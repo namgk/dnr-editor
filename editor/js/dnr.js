@@ -203,6 +203,7 @@ RED.dnr = (function() {
         for (var i = 0; i < constraints.length; i++){
           if (constraints[i].id === constraintId){
             var c = constraints[i]
+            break
           }
         }
 
@@ -420,6 +421,18 @@ RED.dnr = (function() {
         c.fill = constraints[i].fill
         c.text = constraints[i].text
         constraints[i] = c
+        // TEST: update the constraints that are attached to all the nodes
+        RED.nodes.eachNode(function(node){
+          if (!node.constraints){
+            return
+          }
+          for (var id in node.constraints){
+            if (id === c.id){
+              node.constraints[id] = c
+              break
+            }
+          }
+        })
         return
       }
     }  

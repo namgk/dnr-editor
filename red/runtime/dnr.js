@@ -70,6 +70,7 @@ function init(_server,_runtime) {
     for (let x in activeDevices){
       activeDevicesTemp.push({
         id: x,
+        name: activeDevices[x].name,
         context: activeDevices[x].context,
         lastSeen: activeDevices[x].lastSeen
       })
