@@ -14,8 +14,7 @@
     "test": "./node_modules/.bin/grunt"
   },
   "bin": {
-    "node-red": "./red.js",
-    "node-red-pi": "bin/node-red-pi"
+    "dnr-editor": "./red.js"
   },
   "contributors": [
     {

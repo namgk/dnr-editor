@@ -29,6 +29,8 @@ Requirements: several Raspberry Pi (participating Node-RED, just for fun, could 
 ### Setup DNR Editor 
 Similar to Node-RED: git clone, npm install, grunt build, and start by "node red"
 
+Or just: npm install -g dnr-editor, dnr-editor -s \<setting file\>
+
 DNR Editor will run by default at :1818 port.
 
 ### Connect Node RED to the cluster:
