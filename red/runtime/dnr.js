@@ -412,5 +412,24 @@ module.exports = {
 	publish: publish,
   init: init,
   start:start,
-  stop:stop
+  stop:stop,
+  extractNodeTypes: function(nodeFileStr){
+    var start = 'RED.nodes.registerType'
+    var nodeTypes = []
+
+    var idx = nodeFileStr.indexOf(start, 0)
+    while(idx != -1){
+      var commaIdx = nodeFileStr.indexOf(',', idx)
+      var type = nodeFileStr.substring(idx + start.length, commaIdx).trim()
+      type = type.substring(1, type.length).trim() // strip (
+      type = type.substring(1, type.length - 1) // strip quotes
+      nodeTypes.push(type)
+      idx = nodeFileStr.indexOf(start, commaIdx)
+    }
+
+    return nodeTypes
+  }
+
+
+
 }

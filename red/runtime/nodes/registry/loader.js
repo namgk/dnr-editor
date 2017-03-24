@@ -295,7 +295,28 @@ function loadNodeSet(node) {
         if (typeof r === "function") {
 
             var red = createNodeApi(node);
-            var promise = r(red);
+            // dnr: emptify node constructors, we only need their definition!
+            var excludeNodeFiles = ['58-debug.js']
+
+            var intercept = true
+            for (var excludedFile of excludeNodeFiles){
+                if (node.file.indexOf(excludedFile) != -1){
+                    intercept = false
+                }
+            }
+            
+            var promise = null// r(red) dnr: node's module exports function called
+            if (intercept){
+                var rFunc = r.toString()
+                var nodeTypes = require('../../dnr').extractNodeTypes(rFunc)
+
+                for (var type of nodeTypes){
+                    red.nodes.registerType(type,function(n){red.nodes.createNode(this,n);})
+                }
+            } else {
+                promise = r(red); 
+            }
+            
             if (promise != null && typeof promise.then === "function") {
                 loadPromise = promise.then(function() {
                     node.enabled = true;
