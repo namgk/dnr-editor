@@ -48,8 +48,8 @@ function init(_server,_runtime) {
     perMessageDeflate: false
   });
 
-  var mqttServ = mosca.Server({})
-  mqttServ.attachHttpServer(server)
+  var mqttServ = mosca.Server({interfaces:[]})
+  mqttServ.attachHttpServer(server, 'mqttws')
 
   _runtime.adminApi.adminApp.post("/dnr/flows/:id", require("../api").auth.needsPermission("flows.read"), function(req,res) {
     var deployingFlow = req.params.id;

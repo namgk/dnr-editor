@@ -104,92 +104,77 @@ RED.tray = (function() {
                 }
             });
 
-        if (options.open) {
-            options.open(el);
-        }
+        function finishBuild() {
+            $("#header-shade").show();
+            $("#editor-shade").show();
+            $("#palette-shade").show();
+            $(".sidebar-shade").show();
 
-        $("#header-shade").show();
-        $("#editor-shade").show();
-        $("#palette-shade").show();
-        $(".sidebar-shade").show();
+            tray.preferredWidth = Math.max(el.width(),500);
+            body.css({"minWidth":tray.preferredWidth-40});
 
-        tray.preferredWidth = Math.max(el.width(),500);
-        body.css({"minWidth":tray.preferredWidth-40});
-
-        if (options.width) {
-            if (options.width > $("#editor-stack").position().left-8) {
-                options.width = $("#editor-stack").position().left-8;
+            if (options.width) {
+                if (options.width > $("#editor-stack").position().left-8) {
+                    options.width = $("#editor-stack").position().left-8;
+                }
+                el.width(options.width);
+            } else {
+                el.width(tray.preferredWidth);
             }
-            el.width(options.width);
-        } else {
-            el.width(tray.preferredWidth);
-        }
 
-        tray.width = el.width();
-        if (tray.width > $("#editor-stack").position().left-8) {
-            tray.width = Math.max(0/*tray.preferredWidth*/,$("#editor-stack").position().left-8);
-            el.width(tray.width);
-        }
+            tray.width = el.width();
+            if (tray.width > $("#editor-stack").position().left-8) {
+                tray.width = Math.max(0/*tray.preferredWidth*/,$("#editor-stack").position().left-8);
+                el.width(tray.width);
+            }
 
-        // tray.body.parent().width(Math.min($("#editor-stack").position().left-8,tray.width));
+            // tray.body.parent().width(Math.min($("#editor-stack").position().left-8,tray.width));
 
-        el.css({
-            right: -(el.width()+10)+"px",
-            transition: "right 0.25s ease"
-        });
-        $("#workspace").scrollLeft(0);
-        handleWindowResize();
-        openingTray = true;
-        setTimeout(function() {
+            el.css({
+                right: -(el.width()+10)+"px",
+                transition: "right 0.25s ease"
+            });
+            $("#workspace").scrollLeft(0);
+            handleWindowResize();
+            openingTray = true;
             setTimeout(function() {
-                if (!options.width) {
-                    el.width(Math.min(tray.preferredWidth,$("#editor-stack").position().left-8));
-                }
-                if (options.resize) {
-                    options.resize({width:el.width()});
-                }
-                if (options.show) {
-                    options.show();
-                }
                 setTimeout(function() {
-                    // Delay resetting the flag, so we don't close prematurely
-                    openingTray = false;
-                },200);
-                body.find(":focusable:first").focus();
+                    if (!options.width) {
+                        el.width(Math.min(tray.preferredWidth,$("#editor-stack").position().left-8));
+                    }
+                    if (options.resize) {
+                        options.resize({width:el.width()});
+                    }
+                    if (options.show) {
+                        options.show();
+                    }
+                    setTimeout(function() {
+                        // Delay resetting the flag, so we don't close prematurely
+                        openingTray = false;
+                    },200);
+                    body.find(":focusable:first").focus();
 
-            },150);
-            el.css({right:0});
-        },0);
-
-        // growButton.click(function(e) {
-        //     e.preventDefault();
-        //     tray.lastWidth = tray.width;
-        //     tray.width = $("#editor-stack").position().left-8;
-        //     el.width(tray.width);
-        //     if (options.resize) {
-        //         options.resize({width:tray.width});
-        //     }
-        // });
-        // shrinkButton.click(function(e) {
-        //     e.preventDefault();
-        //     if (tray.lastWidth && tray.width > tray.lastWidth) {
-        //         tray.width = tray.lastWidth;
-        //     } else if (tray.width > tray.preferredWidth) {
-        //         tray.width = tray.preferredWidth;
-        //     }
-        //     el.width(tray.width);
-        //     if (options.resize) {
-        //         options.resize({width:tray.width});
-        //     }
-        // });
-
+                },150);
+                el.css({right:0});
+            },0);
+        }
+        if (options.open) {
+            if (options.open.length === 1) {
+                options.open(el);
+                finishBuild();
+            } else {
+                options.open(el,finishBuild);
+            }
+        } else {
+            finishBuild();
+        }
     }
 
     function handleWindowResize() {
         if (stack.length > 0) {
             var tray = stack[stack.length-1];
             var trayHeight = tray.tray.height()-tray.header.outerHeight()-tray.footer.outerHeight();
-            tray.body.height(trayHeight-40);
+            tray.body.height(trayHeight);
             if (tray.width > $("#editor-stack").position().left-8) {
                 tray.width = $("#editor-stack").position().left-8;
                 tray.tray.width(tray.width);
@@ -200,7 +185,7 @@ RED.tray = (function() {
                 // tray.body.parent().width(tray.width);
             }
             if (tray.options.resize) {
-                tray.options.resize({width:tray.width});
+                tray.options.resize({width:tray.width, height:trayHeight});
             }
         }
     }

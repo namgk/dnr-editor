@@ -42,6 +42,17 @@ module.exports = function(grunt) {
             nodes: { src: ["test/nodes/**/*_spec.js"]},
             dnr: {src: ['test/dnr/*_spec.js']}
         },
+        mocha_istanbul: {
+            options: {
+                globals: ['expect'],
+                timeout: 3000,
+                ignoreLeaks: false,
+                ui: 'bdd',
+                reportFormats: ['lcov'],
+                print: 'both'
+            },
+            coverage: { src: ['test/**/*_spec.js'] }
+        },
         jshint: {
             options: {
                 jshintrc:true
@@ -113,10 +124,13 @@ module.exports = function(grunt) {
                     "editor/js/validators.js",
                     "editor/js/ui/utils.js",
                     "editor/js/ui/common/editableList.js",
+                    "editor/js/ui/common/checkboxSet.js",
                     "editor/js/ui/common/menu.js",
+                    "editor/js/ui/common/panels.js",
                     "editor/js/ui/common/popover.js",
                     "editor/js/ui/common/searchBox.js",
                     "editor/js/ui/common/tabs.js",
+                    "editor/js/ui/common/stack.js",
                     "editor/js/ui/common/typedInput.js",
                     "editor/js/ui/actions.js",
                     "editor/js/ui/deploy.js",
@@ -137,6 +151,7 @@ module.exports = function(grunt) {
                     "editor/js/ui/search.js",
                     "editor/js/ui/typeSearch.js",
                     "editor/js/ui/subflow.js",
+                    "editor/js/ui/userSettings.js",
                     "editor/js/ui/touch/radialMenu.js"
                     ,"editor/js/dnr.js"
                 ],
@@ -157,9 +172,13 @@ module.exports = function(grunt) {
                         // TODO: resolve relative resource paths in
                         //       bootstrap/FA/jquery
                     ],
-                    "public/vendor/jsonata/jsonata.js": [
-                        "node_modules/jsonata/jsonata.js",
+                    "public/vendor/jsonata/jsonata.min.js": [
+                        "node_modules/jsonata/jsonata-es5.min.js",
                         "editor/vendor/jsonata/formatter.js"
+                    ],
+                    "public/vendor/ace/worker-jsonata.js": [
+                        "node_modules/jsonata/jsonata-es5.min.js",
+                        "editor/vendor/jsonata/worker-jsonata.js"
                     ]
                 }
             }
@@ -169,9 +188,7 @@ module.exports = function(grunt) {
                 files: {
                     'public/red/red.min.js': 'public/red/red.js',
                     'public/red/main.min.js': 'public/red/main.js',
-                    'public/vendor/jsonata/jsonata.min.js': 'public/vendor/jsonata/jsonata.js',
                     'public/vendor/ace/mode-jsonata.js': 'editor/vendor/jsonata/mode-jsonata.js',
-                    'public/vendor/ace/worker-jsonata.js': 'editor/vendor/jsonata/worker-jsonata.js',
                     'public/vendor/ace/snippets/jsonata.js': 'editor/vendor/jsonata/snippets-jsonata.js'
                 }
             }
@@ -397,6 +414,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-copy');
     grunt.loadNpmTasks('grunt-chmod');
     grunt.loadNpmTasks('grunt-jsonlint');
+    grunt.loadNpmTasks('grunt-mocha-istanbul');
 
     grunt.registerMultiTask('attachCopyright', function() {
         var files = this.data.src;
@@ -417,7 +435,7 @@ module.exports = function(grunt) {
             " **/\n";
 
         if (files) {
-            for (var i=0;i<files.length;i++) {
+            for (var i=0; i<files.length; i++) {
                 var file = files[i];
                 if (!grunt.file.exists(file)) {
                     grunt.log.warn('File '+ file + ' not found');
@@ -476,4 +494,7 @@ module.exports = function(grunt) {
         'Create distribution zip file',
         ['build','clean:release','copy:release','chmod:release','compress:release']);
 
+    grunt.registerTask('coverage',
+        'Run Istanbul code test coverage task',
+        ['build','mocha_istanbul']);
 };

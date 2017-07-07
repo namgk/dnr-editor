@@ -16,49 +16,45 @@
 var fs = require('fs');
 var path = require('path');
 var i18n;
-var supportedLangs = [];
-
-var apiLocalDir = path.resolve(path.join(__dirname,"locales"));
-
-var initSupportedLangs = function() {
-    fs.readdir(apiLocalDir, function(err,files) {
-        if(!err) {
-            supportedLangs = files;
-        }
-    });
-}
+var redNodes;
 
 function determineLangFromHeaders(acceptedLanguages){
     var lang = i18n.defaultLang;
     acceptedLanguages = acceptedLanguages || [];
-    for (var i=0;i<acceptedLanguages.length;i++){
-        if (supportedLangs.indexOf(acceptedLanguages[i]) !== -1){
-            lang = acceptedLanguages[i];
-            break;
-        // check the language without the country code
-        } else if (supportedLangs.indexOf(acceptedLanguages[i].split("-")[0]) !== -1) {
-            lang = acceptedLanguages[i].split("-")[0];
-            break;
-        }
+    if (acceptedLanguages.length >= 1) {
+        lang = acceptedLanguages[0];
     }
     return lang;
 }
-
 module.exports = {
     init: function(runtime) {
         i18n = runtime.i18n;
-        initSupportedLangs();
+        redNodes = runtime.nodes;
     },
     get: function(req,res) {
         var namespace = req.params[0];
+        var lngs = req.query.lng;
         namespace = namespace.replace(/\.json$/,"");
-        var lang = determineLangFromHeaders(req.acceptsLanguages() || []);
+        var lang = req.query.lng; //determineLangFromHeaders(req.acceptsLanguages() || []);
         var prevLang = i18n.i.lng();
+        // Trigger a load from disk of the language if it is not the default
         i18n.i.setLng(lang, function(){
             var catalog = i18n.catalog(namespace,lang);
             res.json(catalog||{});
         });
         i18n.i.setLng(prevLang);
+
+    },
+    getAllNodes: function(req,res) {
+        var lngs = req.query.lng;
+        var nodeList = redNodes.getNodeList();
+        var result = {};
+        nodeList.forEach(function(n) {
+            if (n.module !== "node-red") {
+                result[n.id] = i18n.catalog(n.id,lngs)||{};
+            }
+        });
+        res.json(result);
     },
     determineLangFromHeaders: determineLangFromHeaders
 }

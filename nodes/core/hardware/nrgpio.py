@@ -35,8 +35,13 @@ if len(sys.argv) > 2:
 
     if cmd == "pwm":
         #print "Initialised pin "+str(pin)+" to PWM"
+        try:
+            freq = int(sys.argv[3])
+        except:
+            freq = 100
+
         GPIO.setup(pin,GPIO.OUT)
-        p = GPIO.PWM(pin, 100)
+        p = GPIO.PWM(pin, freq)
         p.start(0)
 
         while True:
@@ -99,9 +104,9 @@ if len(sys.argv) > 2:
 
     elif cmd == "in":
         #print "Initialised pin "+str(pin)+" to IN"
-        bounce = int(sys.argv[4])
+        bounce = float(sys.argv[4])
         def handle_callback(chan):
-            sleep(bounce/1000)
+            sleep(bounce/1000.0)
             print GPIO.input(chan)
 
         if sys.argv[3].lower() == "up":
@@ -112,7 +117,7 @@ if len(sys.argv) > 2:
             GPIO.setup(pin,GPIO.IN)
 
         print GPIO.input(pin)
-        GPIO.add_event_detect(pin, GPIO.BOTH, callback=handle_callback, bouncetime=bounce)
+        GPIO.add_event_detect(pin, GPIO.BOTH, callback=handle_callback, bouncetime=int(bounce))
 
         while True:
             try:
