@@ -1,5 +1,3 @@
-"use strict"
-
 var log = require("./log")
 var ws = require("ws")
 var util = require("./util")
@@ -49,7 +47,7 @@ function init(_server,_runtime) {
   });
 
   var mqttServ = mosca.Server({interfaces:[]})
-  mqttServ.attachHttpServer(server, 'mqttws')
+  mqttServ.attachHttpServer(server, '/mqttws')
 
   _runtime.adminApi.adminApp.post("/dnr/flows/:id", require("../api").auth.needsPermission("flows.read"), function(req,res) {
     var deployingFlow = req.params.id;
@@ -68,6 +66,9 @@ function init(_server,_runtime) {
   _runtime.adminApi.adminApp.get("/dnr/devices", require("../api").auth.needsPermission("flows.read"), function(req,res) {
     let activeDevicesTemp = []
     for (let x in activeDevices){
+      if (!activeDevices.hasOwnProperty(x)) {
+        continue;
+      }
       activeDevicesTemp.push({
         id: x,
         name: activeDevices[x].name,
@@ -222,6 +223,9 @@ function findDeviceForNode(nodeId){
   let mostFreeMem = 0
   let mostFreeDevId
   for (let dId in activeDevices){
+    if (!activeDevices.hasOwnProperty(dId)) {
+      continue;
+    }
     let device = activeDevices[dId]
     if (!device.context || !device.context.freeMem || !device.contributingNodes){
       continue
@@ -268,8 +272,9 @@ function start(){
         return
       }
 
+      var msg;
       try {
-        var msg = JSON.parse(data);
+        msg = JSON.parse(data);
       } catch(err) {
         log.warn( 'dnr comms error: ' + err.toString() );
         return;
@@ -304,6 +309,9 @@ function start(){
 
         let resp = []
         for (let k in dnrSyncReqs){
+          if (!dnrSyncReqs.hasOwnProperty(k)){
+            continue
+          }
           let dnrSyncReq = dnrSyncReqs[k]
           if (!dnrSyncReq.deviceId || dnrSyncReq.deviceId !== device){
             log.warn('id in dnrSyncReq not match with heartbeat request - ' + dnrSyncReq.deviceId + ' vs ' + device)
@@ -395,6 +403,9 @@ function stop() {
 function broadcast(topic,data) {
   lastSentTime = Date.now();
   for (let device in activeDevices){
+    if (!activeDevices.hasOwnProperty(device)){
+      continue
+    }
     publishTo(activeDevices[device].ws, topic, data)
   }
 }

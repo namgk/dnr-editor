@@ -2,7 +2,7 @@ var should = require("should");
 var fs = require("fs");
 var dnr = require("../../red/runtime/dnr")
 
-describe("Emptify node constructors", function() {
+describe("dnr", function() {
   it('extracts node types', function() {
   	var testCases = [
   		{
