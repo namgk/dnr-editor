@@ -1,7 +1,7 @@
 var log = require("./log")
 var ws = require("ws")
 var util = require("./util")
-var mosca = require('mosca')
+var mqttServer = require('./mqttServer')
 
 var connected = false
 var activeDevices = {} // deviceId --> ws, context, lastSeen, contributingNodes
@@ -21,10 +21,11 @@ var dnrInterface = require('dnr-interface')
 var DnrSyncReq = dnrInterface.DnrSyncReq
 var DnrSyncRes = dnrInterface.DnrSyncRes
 
+var MQTT_WS_PATH = dnrInterface.MQTT_WS_PATH
 var TOPIC_DNR_HB = dnrInterface.TOPIC_DNR_HB
 var TOPIC_REGISTER = dnrInterface.TOPIC_REGISTER
 var TOPIC_REGISTER_ACK = dnrInterface.TOPIC_REGISTER_ACK
-var TOPIC_REGISTER_REQ = 'register_req'
+var TOPIC_REGISTER_REQ = dnrInterface.TOPIC_REGISTER_REQ
 var TOPIC_DNR_SYN_RESS = dnrInterface.TOPIC_DNR_SYN_RESS
 var TOPIC_FLOW_DEPLOYED = dnrInterface.TOPIC_FLOW_DEPLOYED
 
@@ -37,18 +38,11 @@ function init(_server,_runtime) {
   server = _server
   runtime = _runtime
 
-  var path = _runtime.settings.httpAdminRoot || "/";
-  path = (path.slice(0,1) != "/" ? "/":"") + path + (path.slice(-1) == "/" ? "":"/") + "dnr";
+  var path = _runtime.settings.httpAdminRoot || "/"
+  path = (path.slice(0,1) != "/" ? "/":"") 
+    + path 
+    + (path.slice(-1) == "/" ? "":"/") + "dnr"
   
-  wsServer = new ws.Server({
-    server:server,
-    path:path,
-    perMessageDeflate: false
-  });
-
-  var mqttServ = mosca.Server({interfaces:[]})
-  mqttServ.attachHttpServer(server, '/mqttws')
-
   _runtime.adminApi.adminApp.post("/dnr/flows/:id", require("../api").auth.needsPermission("flows.read"), function(req,res) {
     var deployingFlow = req.params.id;
     broadcast(TOPIC_FLOW_DEPLOYED, {
@@ -79,6 +73,14 @@ function init(_server,_runtime) {
 
     res.json(activeDevicesTemp)
   })
+
+  wsServer = new ws.Server({
+    server:server,
+    path:path,
+    perMessageDeflate: false
+  });
+
+  mqttServer.start(server, MQTT_WS_PATH)
 
   start()
 }

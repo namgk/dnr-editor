@@ -6,7 +6,7 @@ var topic = 'oaiwjefo;ajw;efj209jf'
 var msg = 'j29f0j2j3fqj40f'
 
 describe("dnr mqtt", function() {
-  it('connect to external mqtt server', function(done) {
+  it('connects to external mqtt server', function(done) {
 		var client  = mqtt.connect('mqtt://test.mosquitto.org')
 
 		client.on('connect', function () {
@@ -22,17 +22,19 @@ describe("dnr mqtt", function() {
 		})
   });
 
-	it('connect to built in mosca mqtt server', function(done) {
+	it('connects to built in mosca mqtt server', function(done) {
 		var http     = require('http')
 		  , httpServ = http.createServer()
 		  , mosca    = require('mosca')
-		  , mqttServ = new mosca.Server({})
+		  , mqttServer = require('../../red/runtime/mqttServer')
 		  , mqttWsPath = '/mqttws'
+		  , mqttHost = 'ws://localhost'
+		  , port = 37541
 
-		mqttServ.attachHttpServer(httpServ, mqttWsPath)
+		mqttServer.start(httpServ, mqttWsPath)
 
-		httpServ.listen(3000, ()=>{
-			var client  = mqtt.connect('ws://localhost:3000' + mqttWsPath)
+		httpServ.listen(port, ()=>{
+			var client  = mqtt.connect(mqttHost + ':' + port + mqttWsPath)
 
 			client.on('connect', function () {
 			  client.subscribe(topic)

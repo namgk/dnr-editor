@@ -1087,9 +1087,9 @@ diff@3.2.0:
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/diff/-/diff-3.2.0.tgz#c9ce393a4b7cbd0b058a725c93df299027868ff9"
 
-dnr-interface@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/dnr-interface/-/dnr-interface-1.1.1.tgz#a3cdb011335fdbc7b40ee6ff14edb2c701364dfd"
+dnr-interface@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/dnr-interface/-/dnr-interface-1.2.0.tgz#739c8bc89012a8dc4f6d0a22e851e56570e61528"
 
 dom-serializer@0, dom-serializer@~0.1.0:
   version "0.1.0"
