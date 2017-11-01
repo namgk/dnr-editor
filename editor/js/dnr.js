@@ -46,6 +46,8 @@ function initGui(){
         <input type="text" id="memory-constraint" placeholder="500">\
         <label for="cores-constraint"><i class="fa"></i>Min CPU cores:</label>\
         <input type="text" id="cores-constraint" placeholder="1000">\
+        <label for="force-install">Force install</label>\
+        <input type="checkbox" id="force-install">\
     </div>\
   </div>').appendTo("body")
 
@@ -63,6 +65,10 @@ RED.dnr = (function() {
 
   // location constraints GUI
   function mapInit(){
+    if (typeof google === 'undefined'){
+      console.log('map api not loaded')
+      return
+    }
     var VANCOUVER = {lat: 49.269801, lng: -123.109489}
     var currentOverlay = null
     var overlayVisible = false
@@ -872,6 +878,10 @@ RED.sidebar.devices = (function() {
   RED.actions.add("dnr:show-devices-tab",function() {RED.sidebar.show('devices')});
 
   function init(){
+    if (typeof google === 'undefined'){
+      console.log('map api not loaded')
+      return
+    }
     map = new google.maps.Map(document.getElementById('deviceMap'), {
       zoom: MAP_ZOOM,
       center: {lat: 49.269801, lng: -123.109489}
