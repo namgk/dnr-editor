@@ -3450,7 +3450,7 @@ mqtt-packet@^3.0.0, mqtt-packet@^3.4.7:
     bl "^0.9.1"
     inherits "^2.0.1"
 
-mqtt-packet@^5.2.1:
+mqtt-packet@^5.4.0:
   version "5.4.0"
   resolved "https://registry.yarnpkg.com/mqtt-packet/-/mqtt-packet-5.4.0.tgz#387104c06aa68fbb9f8159d0c722dd5c3e45df22"
   dependencies:
@@ -3459,9 +3459,9 @@ mqtt-packet@^5.2.1:
     process-nextick-args "^1.0.7"
     safe-buffer "^5.1.0"
 
-mqtt@2.9.0:
-  version "2.9.0"
-  resolved "https://registry.yarnpkg.com/mqtt/-/mqtt-2.9.0.tgz#379ceb787a52fc15cb8fc96d558a32c123f12a9d"
+mqtt@2.15.0:
+  version "2.15.0"
+  resolved "https://registry.yarnpkg.com/mqtt/-/mqtt-2.15.0.tgz#64bd27b7b75b22fa9594fae83c71cdada40bd460"
   dependencies:
     commist "^1.0.0"
     concat-stream "^1.6.0"
@@ -3469,12 +3469,12 @@ mqtt@2.9.0:
     help-me "^1.0.1"
     inherits "^2.0.3"
     minimist "^1.2.0"
-    mqtt-packet "^5.2.1"
-    pump "^1.0.2"
-    readable-stream "^2.2.11"
+    mqtt-packet "^5.4.0"
+    pump "^2.0.0"
+    readable-stream "^2.3.3"
     reinterval "^1.1.0"
     split2 "^2.1.1"
-    websocket-stream "^5.0.0"
+    websocket-stream "^5.0.1"
     xtend "^4.0.1"
 
 mqtt@^1.10.0, mqtt@^1.6.3:
@@ -4299,9 +4299,16 @@ pull-window@^2.1.4:
   dependencies:
     looper "^2.0.0"
 
-pump@^1.0.0, pump@^1.0.1, pump@^1.0.2:
+pump@^1.0.0, pump@^1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/pump/-/pump-1.0.2.tgz#3b3ee6512f94f0e575538c17995f9f16990a5d51"
+  dependencies:
+    end-of-stream "^1.1.0"
+    once "^1.3.1"
+
+pump@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/pump/-/pump-2.0.0.tgz#7946da1c8d622b098e2ceb2d3476582470829c9d"
   dependencies:
     end-of-stream "^1.1.0"
     once "^1.3.1"
@@ -4463,7 +4470,7 @@ readable-stream@2.2.7:
     string_decoder "~1.0.0"
     util-deprecate "~1.0.1"
 
-"readable-stream@> 1.0.0 < 3.0.0", readable-stream@^2.0.0, readable-stream@^2.0.1, readable-stream@^2.0.2, readable-stream@^2.0.5, readable-stream@^2.0.6, readable-stream@^2.1.4, readable-stream@^2.1.5, readable-stream@^2.2.11, readable-stream@^2.2.2, readable-stream@^2.3.3:
+"readable-stream@> 1.0.0 < 3.0.0", readable-stream@^2.0.0, readable-stream@^2.0.1, readable-stream@^2.0.2, readable-stream@^2.0.5, readable-stream@^2.0.6, readable-stream@^2.1.4, readable-stream@^2.1.5, readable-stream@^2.2.2, readable-stream@^2.3.3:
   version "2.3.3"
   resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-2.3.3.tgz#368f2512d79f9d46fdfc71349ae7878bbc1eb95c"
   dependencies:
@@ -5547,7 +5554,7 @@ websocket-stream@^3.0.1:
     ws "^1.0.1"
     xtend "^4.0.0"
 
-websocket-stream@^5.0.0:
+websocket-stream@^5.0.1:
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/websocket-stream/-/websocket-stream-5.1.1.tgz#68d23916cdf53689cff73e213fa2178dbcea6169"
   dependencies:
