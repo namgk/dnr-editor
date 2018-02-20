@@ -11,6 +11,7 @@
     "main": "red/red.js",
     "scripts": {
         "start": "node red.js",
+        "dev": "./node_modules/.bin/grunt dev",
         "test": "./node_modules/.bin/grunt test-dnr"
     },
     "bin": {

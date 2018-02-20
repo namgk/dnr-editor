@@ -14,178 +14,15 @@
  * limitations under the License.
  **/
 
-function initGui(){
-  // GUI setup
-  $('<div id="node-dialog-map" class="hide">\
-        <div id="map" style="height: 300px;">\
-        </div>\
-    </div>').appendTo("body")
-  
-  /* Node Requirements button */ 
-  $('<li><span class="deploy-button-group button-group">'+
-    '<a id="btn-constraints" class="deploy-button" href="#"> <span>Node Requirements</span></a>'+
-    '<a id="btn-constraints-options" data-toggle="dropdown" class="deploy-button" href="#"><i class="fa fa-caret-down"></i></a>'+
-    '</span></li>').prependTo(".header-toolbar")
-  
-  /* Link Requirements button */ 
-  $('<li><span class="deploy-button-group button-group">'+
-    '<a id="btn-link-constraints" data-toggle="dropdown" class="deploy-button" href="#">'+
-    'Link Requirements ' + 
-    '<i class="fa fa-caret-down"></i></a>'+
-    '</span></li>').prependTo(".header-toolbar")
-
-  $('<div id="node-dialog-new-constraints" class="hide node-red-dialog">\
-    <div class="form-row">\
-        <label for="constraint-id" ><i class="fa"></i>Constraint Id:</label>\
-        <input type="text" id="constraint-id">\
-        <label for="device-name" ><i class="fa"></i>Device Name:</label>\
-        <input type="text" id="device-name" placeholder="device s application scope unique ID">\
-        <label><i class="fa"></i>Location:</label>\
-        <input type="text" id="location-constraint">\
-        <label for="memory-constraint"><i class="fa"></i>Min memory (MB):</label>\
-        <input type="text" id="memory-constraint" placeholder="500">\
-        <label for="cores-constraint"><i class="fa"></i>Min CPU cores:</label>\
-        <input type="text" id="cores-constraint" placeholder="1000">\
-        <label for="force-install">Force install</label>\
-        <input type="checkbox" id="force-install">\
-    </div>\
-  </div>').appendTo("body")
-
-  $('<div id="seed-dialog" class="hide node-red-dialog">'+
-    '<form class="dialog-form form-horizontal">'+
-      '<div class="form-row">'+
-        '<textarea readonly style="resize: none; width: 100%; border-radius: 4px;font-family: monospace; font-size: 12px; background:#f3f3f3; padding-left: 0.5em; box-sizing:border-box;" id="seed-export" rows="5"></textarea>'+
-      '</div>'+
-    '</form></div>').appendTo("body")
-}
-
 
 RED.dnr = (function() {
   var constraints = [];
 
-  // location constraints GUI
-  function mapInit(){
-    if (typeof google === 'undefined'){
-      console.log('map api not loaded')
-      return
-    }
-    var VANCOUVER = {lat: 49.269801, lng: -123.109489}
-    var currentOverlay = null
-    var overlayVisible = false
-    var rectangle
 
-    var map = new google.maps.Map(document.getElementById('map'), {
-      center: VANCOUVER, 
-      zoom: 10
-    })
-    
-    var drawingManager = new google.maps.drawing.DrawingManager({
-      drawingMode: google.maps.drawing.OverlayType.MARKER,
-      drawingControl: true,
-      drawingControlOptions: {
-        position: google.maps.ControlPosition.TOP_CENTER,
-        drawingModes: ['rectangle']
-      }
-    })
-
-    drawingManager.setMap(map)
-
-    $("#node-dialog-map").dialog({
-      title:"Set location constraint",
-      modal: true,
-      autoOpen: false,
-      width: 500,
-      open: function(e) {
-        drawingManager.setDrawingMode(google.maps.drawing.OverlayType.RECTANGLE)
-        google.maps.event.trigger(map, 'resize') // to make map visible
-        var locationConstraint = $('#location-constraint').val()
-        if (!locationConstraint){
-          clearOverlay()
-          return
-        }
-
-        locationConstraint = JSON.parse(locationConstraint)
-        var north = locationConstraint.ne[0]
-        var south = locationConstraint.sw[0]
-        var east = locationConstraint.ne[1]
-        var west = locationConstraint.sw[1]
-
-        rectangle = new google.maps.Rectangle({
-          map: map,
-          bounds: {
-            north: north,
-            south: south,
-            east: east,
-            west: west
-          }
-        })
-
-        map.setCenter({
-          lat: south, 
-          lng: west
-        })
-      },
-      close: function(e) {
-        clearOverlay()
-      },
-      buttons: 
-      {
-        Set: function (){
-          if (!overlayVisible){
-            $('#location-constraint').val("")
-            $(this ).dialog( "close");
-            return
-          }
-
-          var bounds = currentOverlay.getBounds();
-          var start = bounds.getNorthEast();
-          var end = bounds.getSouthWest();
-
-          $('#location-constraint').val( 
-            JSON.stringify({
-              ne: [start.lat(), start.lng()],
-              sw: [end.lat(), end.lng()]
-          }));
-
-          $(this).dialog( "close" );
-        },
-        Reset: function(){
-          clearOverlay()
-        },
-        Cancel: function() {
-          $(this).dialog( "close" );
-        }
-      }
-    })
-
-    google.maps.event.addListener(map, 'click', function(event) {
-      clearOverlay()
-    });
-
-    google.maps.event.addListener(drawingManager, 'overlaycomplete', function(e) {
-      clearOverlay()
-      currentOverlay = e.overlay
-      overlayVisible = true
-    })
-
-    $('#location-constraint').click(function() { 
-      $("#node-dialog-map").dialog( "open" )
-    })
-
-    function clearOverlay(){
-      if (currentOverlay){
-        currentOverlay.setMap(null)
-        overlayVisible = false
-      }
-      if (rectangle){
-        rectangle.setMap(null)
-      }
-    }
-  }
-
+  /* DNR stack initiation */
   function init() {
     initGui()
-    mapInit()
+    initMap()
     RED.sidebar.devices.init()
 
     $('#btn-constraints').click(function() { 
@@ -334,8 +171,176 @@ RED.dnr = (function() {
         }
       })
     })
-  }// end init
+  }// end stack initiation
 
+  function initGui(){
+    /* Node Requirements button */ 
+    $('<li><span class="deploy-button-group button-group">'+
+      '<a id="btn-constraints" class="deploy-button" href="#"> <span>Node Requirements</span></a>'+
+      '<a id="btn-constraints-options" data-toggle="dropdown" class="deploy-button" href="#"><i class="fa fa-caret-down"></i></a>'+
+      '</span></li>').prependTo(".header-toolbar")
+    
+    /* Link Requirements button */ 
+    $('<li><span class="deploy-button-group button-group">'+
+      '<a id="btn-link-constraints" data-toggle="dropdown" class="deploy-button" href="#">'+
+      'Link Requirements ' + 
+      '<i class="fa fa-caret-down"></i></a>'+
+      '</span></li>').prependTo(".header-toolbar")
+
+    // Location constraint dialog (map)
+    $('<div id="node-dialog-map" class="hide">\
+          <div id="map" style="height: 300px;">\
+          </div>\
+      </div>').appendTo("body")
+
+    /* Constraint definition dialog */ 
+    $('<div id="node-dialog-new-constraints" class="hide node-red-dialog">\
+      <div class="form-row">\
+          <label for="constraint-id" ><i class="fa"></i>Constraint Id:</label>\
+          <input type="text" id="constraint-id">\
+          <label for="device-name" ><i class="fa"></i>Device Name:</label>\
+          <input type="text" id="device-name" placeholder="device s application scope unique ID">\
+          <label><i class="fa"></i>Location:</label>\
+          <input type="text" id="location-constraint">\
+          <label for="memory-constraint"><i class="fa"></i>Min memory (MB):</label>\
+          <input type="text" id="memory-constraint" placeholder="500">\
+          <label for="cores-constraint"><i class="fa"></i>Min CPU cores:</label>\
+          <input type="text" id="cores-constraint" placeholder="1000">\
+          <label for="force-install">Force install</label>\
+          <input type="checkbox" id="force-install">\
+      </div>\
+    </div>').appendTo("body")
+
+    /* Seed flow dialog */ 
+    $('<div id="seed-dialog" class="hide node-red-dialog">'+
+      '<form class="dialog-form form-horizontal">'+
+        '<div class="form-row">'+
+          '<textarea readonly style="resize: none; width: 100%; border-radius: 4px;font-family: monospace; font-size: 12px; background:#f3f3f3; padding-left: 0.5em; box-sizing:border-box;" id="seed-export" rows="5"></textarea>'+
+        '</div>'+
+      '</form></div>').appendTo("body")
+  }
+
+  // location constraints GUI
+  function initMap(){
+    if (typeof google === 'undefined'){
+      console.log('map api not loaded')
+      return
+    }
+    var VANCOUVER = {lat: 49.269801, lng: -123.109489}
+    var currentOverlay = null
+    var overlayVisible = false
+    var rectangle
+
+    var map = new google.maps.Map(document.getElementById('map'), {
+      center: VANCOUVER, 
+      zoom: 10
+    })
+    
+    var drawingManager = new google.maps.drawing.DrawingManager({
+      drawingMode: google.maps.drawing.OverlayType.MARKER,
+      drawingControl: true,
+      drawingControlOptions: {
+        position: google.maps.ControlPosition.TOP_CENTER,
+        drawingModes: ['rectangle']
+      }
+    })
+
+    drawingManager.setMap(map)
+
+    $("#node-dialog-map").dialog({
+      title:"Set location constraint",
+      modal: true,
+      autoOpen: false,
+      width: 500,
+      open: function(e) {
+        drawingManager.setDrawingMode(google.maps.drawing.OverlayType.RECTANGLE)
+        google.maps.event.trigger(map, 'resize') // to make map visible
+        var locationConstraint = $('#location-constraint').val()
+        if (!locationConstraint){
+          clearOverlay()
+          return
+        }
+
+        locationConstraint = JSON.parse(locationConstraint)
+        var north = locationConstraint.ne[0]
+        var south = locationConstraint.sw[0]
+        var east = locationConstraint.ne[1]
+        var west = locationConstraint.sw[1]
+
+        rectangle = new google.maps.Rectangle({
+          map: map,
+          bounds: {
+            north: north,
+            south: south,
+            east: east,
+            west: west
+          }
+        })
+
+        map.setCenter({
+          lat: south, 
+          lng: west
+        })
+      },
+      close: function(e) {
+        clearOverlay()
+      },
+      buttons: 
+      {
+        Set: function (){
+          if (!overlayVisible){
+            $('#location-constraint').val("")
+            $(this ).dialog( "close");
+            return
+          }
+
+          var bounds = currentOverlay.getBounds();
+          var start = bounds.getNorthEast();
+          var end = bounds.getSouthWest();
+
+          $('#location-constraint').val( 
+            JSON.stringify({
+              ne: [start.lat(), start.lng()],
+              sw: [end.lat(), end.lng()]
+          }));
+
+          $(this).dialog( "close" );
+        },
+        Reset: function(){
+          clearOverlay()
+        },
+        Cancel: function() {
+          $(this).dialog( "close" );
+        }
+      }
+    })
+
+    google.maps.event.addListener(map, 'click', function(event) {
+      clearOverlay()
+    });
+
+    google.maps.event.addListener(drawingManager, 'overlaycomplete', function(e) {
+      clearOverlay()
+      currentOverlay = e.overlay
+      overlayVisible = true
+    })
+
+    $('#location-constraint').click(function() { 
+      $("#node-dialog-map").dialog( "open" )
+    })
+
+    function clearOverlay(){
+      if (currentOverlay){
+        currentOverlay.setMap(null)
+        overlayVisible = false
+      }
+      if (rectangle){
+        rectangle.setMap(null)
+      }
+    }
+  }
+
+  /* Helper functions */
   function resetConstraintsDialog(){
     $("#constraint-id").val("")
     $("#device-name").val("")
@@ -785,8 +790,12 @@ RED.dnr = (function() {
 
 
 
-
+/* Device monitoring sidebar */
 RED.sidebar.devices = (function() {
+  var activeFilter = ""
+  var loadedList = []
+
+  /* Setup sidebar view */
   var content = $('<div class="sidebar-devices">')
   var toolbar = $('<div>'+
       '<a class="sidebar-footer-button" id="workspace-devices-map-view" href="#"><i id="workspaces-devices-list" class="fa fa-map-marker"></i></a></div>')
@@ -797,15 +806,15 @@ RED.sidebar.devices = (function() {
     .searchBox({
         delay: 300,
         change: function() {
-          var searchTerm = $(this).val().toLowerCase();
-          if (searchTerm.length > 0) {
-              
-          } else {
-              searchInput.searchBox('count',loadedList.length);
-          }
+          activeFilter = $(this).val().toLowerCase();
+          var visible = devicesList.editableList('filter');
+          searchInput.searchBox('count',visible);
+          devicesList.children().removeClass('selected');
+          devicesList.children(":visible:first").addClass('selected');
         }
     });
 
+  // Sidebar map
   var mapView = $('<div id="deviceMap">').css({
     "position": "absolute",
     "top": "35px",
@@ -815,7 +824,9 @@ RED.sidebar.devices = (function() {
     "z-index": 900
   }).appendTo(content).hide()
 
-  var devicesList = $('<ol>',{style:"position: absolute;top: 35px;bottom: 0;left: 0;right: 0px;"}).appendTo(content).editableList({
+  var devicesList = $('<ol>',{style:"position: absolute;top: 35px;bottom: 0;left: 0;right: 0px;"})
+    .appendTo(content)
+    .editableList({
       addButton: false,
       scrollOnAdd: false,
       sort: function(device1,device2) {
@@ -823,10 +834,10 @@ RED.sidebar.devices = (function() {
       },
       filter: function(data) {
         if (activeFilter === "" ) {
-          return true;
+          return true
         }
-
-        return (activeFilter==="")||(data.index.indexOf(activeFilter) > -1);
+        
+        return data.name.indexOf(activeFilter) > -1
       },
       addItem: function(container,i,device) {
         var entry = device;
@@ -958,6 +969,7 @@ RED.sidebar.devices = (function() {
       devices[device.id].elements.lastSeenText.html(Date.now())
       clearTimeout(devices[device.id].destroyTimer)
     }
+    loadedList = Object.values(devices)
   }
 
   function updateMap(){
