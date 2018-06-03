@@ -520,7 +520,7 @@ RED.dnr = (function() {
       .attr("transform","translate(" + midX + "," + midY+ ")")
       .append("svg:text")
       .text(linkType)
-      .on("click", (function(){
+      .on("mousedown", (function(){
         return function(){
           link.selectAll('.link_constraint_group').remove();
           delete sourceConstraints.link[sourcePort + '_' + target.id]
@@ -559,7 +559,7 @@ RED.dnr = (function() {
       .attr("transform","translate(" + midX + "," + midY+ ")")
       .append("svg:text")
       .text(linkType)
-      .on("click", (function(){
+      .on("mousedown", (function(){
         return function(){
           link.selectAll('.link_constraint_group').remove();
           delete sourceLink[sourcePort + '_' + target.id]
@@ -722,7 +722,7 @@ RED.dnr = (function() {
       node_constraint.style({fill: fill, stroke: fill})
         .attr("class","node_constraint")
         .attr("transform","translate(0, " + j*17 + ")")
-        .on("mouseup", makeCallback(constraintData.id, node_constraint));
+        .on("mousedown", makeCallback(constraintData.id, node_constraint));
 
       node_constraint.append("svg:text")
         .attr("class","node_constraint_label")
