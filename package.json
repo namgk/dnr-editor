@@ -1,6 +1,6 @@
 {
     "name": "dnr-editor",
-    "version": "0.17.3-1.0.4",
+    "version": "0.17.3-1.0.5",
     "description": "Flows editor for Distributed Node-RED",
     "homepage": "https://github.com/namgk/dnr-editor/blob/master/README.md",
     "license": "Apache-2.0",
