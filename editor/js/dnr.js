@@ -713,6 +713,7 @@ RED.dnr = (function() {
       var node_constraint = node_constraints_group.append("svg:g");
       var makeCallback = function(id, node_constraint){
         return function(){
+          alert('deleting')
           delete d.constraints[id];
           node_constraint.remove();
           RED.nodes.dirty(true);
@@ -721,7 +722,7 @@ RED.dnr = (function() {
       node_constraint.style({fill: fill, stroke: fill})
         .attr("class","node_constraint")
         .attr("transform","translate(0, " + j*17 + ")")
-        .on("click", makeCallback(constraintData.id, node_constraint));
+        .on("mouseup", makeCallback(constraintData.id, node_constraint));
 
       node_constraint.append("svg:text")
         .attr("class","node_constraint_label")
