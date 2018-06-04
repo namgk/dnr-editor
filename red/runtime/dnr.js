@@ -168,7 +168,7 @@ function processDnrSyncRequest(dnrSyncReq){
 
     }
     let commTopic
-    if (linkState === dnrInterface.Context.FETCH_FORWARD){
+    if (linkState === dnrInterface.Context.FETCH_FORWARD || linkState === dnrInterface.Context.COPY_FETCH_FORWARD){
       // find one device that host srcId
       let mostFreeDevId = findDeviceForNode(sourceId)
       if (!mostFreeDevId){
@@ -190,7 +190,7 @@ function processDnrSyncRequest(dnrSyncReq){
           break
       }
 
-    } else if (linkState === dnrInterface.Context.RECEIVE_REDIRECT){
+    } else if (linkState === dnrInterface.Context.RECEIVE_REDIRECT || linkState === dnrInterface.Context.RECEIVE_REDIRECT_COPY){
       // find one device that host destId
       let mostFreeDevId = findDeviceForNode(destId)   
       if (!mostFreeDevId){
