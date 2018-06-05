@@ -713,6 +713,7 @@ RED.dnr = (function() {
       var node_constraint = node_constraints_group.append("svg:g");
       var makeCallback = function(id, node_constraint){
         return function(){
+          console.log('deleting')
           delete d.constraints[id];
           node_constraint.remove();
           RED.nodes.dirty(true);
@@ -847,6 +848,14 @@ RED.sidebar.devices = (function() {
 
           var titleRow = $('<div class="device-meta device-name"><i class="fa fa-podcast" style="margin-right: 5px;"></i></div>').appendTo(headerRow);
           $('<span>').html(entry.name).appendTo(titleRow);
+
+          var memoryRow = $('<div class="device-meta device-memory"></div>').appendTo(headerRow);
+          var cpuRow = $('<div class="device-meta device-cpu"></div>').appendTo(headerRow);
+          
+          var memoryBar = $('<div style="line-height: 17px; height: 17px; width: ' + entry.freeMem + '%; background: #54A964; color: white; margin-bottom: 5px">MEM</div>').appendTo(memoryRow) 
+          var cpuBar = $('<div style="line-height: 17px; height: 17px; width: ' + entry.cpuFree + '%; background: #00B1B8; color: white;">CPU</div>').appendTo(cpuRow) 
+          // var cpuText = $('<span>').html(entry.cpus).appendTo(cpuRow) 
+
           var metaRow = $('<div class="device-meta device-lastSeen"><i class="fa fa-clock-o" style="margin-right: 5px;"></i></div>').appendTo(headerRow);
 
           var lastSeenText = $('<span>').html(entry.lastSeen).appendTo(metaRow)
@@ -860,6 +869,9 @@ RED.sidebar.devices = (function() {
           device.elements = {
             statusText: statusText,
             lastSeenText: lastSeenText,
+            memoryBar: memoryBar,
+            cpuBar: cpuBar,
+            // cpuText: cpuText,
             container: container,
             headerRow: headerRow,
             shade: shade
@@ -938,6 +950,8 @@ RED.sidebar.devices = (function() {
       if (topic === 'devices/heartbeat'){
         var ctx = JSON.stringify(device.context)
         devices[device.id].context = device.context
+        devices[device.id].freeMem = device.context.freeMem
+        devices[device.id].cpuFree = device.context.cpuFree*100
         devices[device.id].lastSeen = device.lastSeen
         var lastSeenTime = new Date(device.lastSeen)
         devices[device.id].elements.lastSeenText.html(
@@ -945,6 +959,8 @@ RED.sidebar.devices = (function() {
           lastSeenTime.getMinutes() + ':' +
           lastSeenTime.getSeconds()
         )
+        devices[device.id].elements.memoryBar.css('width', devices[device.id].freeMem/4000000000 + '%')
+        devices[device.id].elements.cpuBar.css('width', devices[device.id].cpuFree + '%')
         devices[device.id].elements.headerRow.attr("title", ctx)
         updateMap()
       }
@@ -957,7 +973,10 @@ RED.sidebar.devices = (function() {
         id: device.id,
         name: device.name,
         lastSeen: Date.now(),
-        status: 'connected'
+        status: 'connected',
+        cpus: device.context.cpus,
+        cpuFree: device.context.cpuFree*100,
+        freeMem: device.context.freeMem
       }
       devicesList.editableList('addItem', devices[device.id]);
     } else {
@@ -989,6 +1008,7 @@ RED.sidebar.devices = (function() {
       latlngs.push({
         id: id,
         freeMem: devices[id].context.freeMem,
+        cpuFree: devices[id].context.cpuFree,
         cores: devices[id].context.cores,
         lat: devices[id].context.location.lat,
         lng: devices[id].context.location.lng

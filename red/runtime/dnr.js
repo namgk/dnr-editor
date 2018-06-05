@@ -133,6 +133,11 @@ function assignBrokers(dnrSyncReq){
 */
 function processDnrSyncRequest(dnrSyncReq){
   let deviceId = dnrSyncReq.deviceId
+  if (!activeDevices[deviceId]){
+    log.warn('receive a dnr sync request from an unknown device')
+    return
+  }
+
   let flowId = dnrSyncReq.flowId
   let flow = runtime.nodes.getFlow(flowId)
   if (!flow){
@@ -143,6 +148,18 @@ function processDnrSyncRequest(dnrSyncReq){
   let contributingNodes = dnrSyncReq.contributingNodes
   
   activeDevices[deviceId].contributingNodes = contributingNodes
+
+  // implementing link score
+  if (!activeDevices[deviceId].contributingNodesWithLinkScore){
+    activeDevices[deviceId].contributingNodesWithLinkScore = {}
+  }
+
+  for (let contributingNode of contributingNodes){
+    if (!activeDevices[deviceId].contributingNodesWithLinkScore[contributingNode]){
+      activeDevices[deviceId].contributingNodesWithLinkScore[contributingNode] = [0,0]// backward, forward
+    }
+  }
+
   var dnrLinksResponse = {}
 
   for (let dnrLink of dnrLinks){
@@ -170,6 +187,7 @@ function processDnrSyncRequest(dnrSyncReq){
     let commTopic
     if (linkState === dnrInterface.Context.FETCH_FORWARD || linkState === dnrInterface.Context.COPY_FETCH_FORWARD){
       // find one device that host srcId
+      // let hightestLinkScoreDevId = findLinkScoreBasedDeviceForNode(sourceId, 0)
       let mostFreeDevId = findDeviceForNode(sourceId)
       if (!mostFreeDevId){
         continue
@@ -192,7 +210,9 @@ function processDnrSyncRequest(dnrSyncReq){
 
     } else if (linkState === dnrInterface.Context.RECEIVE_REDIRECT || linkState === dnrInterface.Context.RECEIVE_REDIRECT_COPY){
       // find one device that host destId
-      let mostFreeDevId = findDeviceForNode(destId)   
+      let hightestLinkScoreDevId = findLinkScoreBasedDeviceForNode(destId, 1)
+      let mostFreeDevId = hightestLinkScoreDevId // testing with link score! before: findDeviceForNode(destId)
+      
       if (!mostFreeDevId){
         continue
       }
@@ -221,9 +241,56 @@ function processDnrSyncRequest(dnrSyncReq){
   return dnrLinksResponse
 }
 
+/* 
+  @param direction: 
+    0: backward - finding device running a sender node (findSourceDeviceForNode)
+    1: forward - finding device running a receiver node
+
+  @return:
+    the chosen device with highest link score
+*/
+function findLinkScoreBasedDeviceForNode(nodeId, direction){
+  // loop through all devices
+  let highestLinkScore = 0;
+  let highestLinkScoreDevice
+
+  for (let dId in activeDevices){
+    if (!activeDevices.hasOwnProperty(dId)) {
+      continue;
+    }
+    let device = activeDevices[dId]
+    if (!device.context || 
+        !device.context.freeMem || 
+        !device.contributingNodesWithLinkScore ||
+        !device.contributingNodesWithLinkScore[nodeId]){
+      continue
+    }
+
+    // which node this device has
+    // previously contribNodes is ["nodeId", "nodeId"]
+    // now with link score: {<nodeId>: [<backward_score>,<forward_score>]}
+
+    // get the link score of such node instances
+    // update the link score and return the one that has the highest link score
+    let contribNodeScores = device.contributingNodesWithLinkScore[nodeId]
+    let linkScore = contribNodeScores[direction]
+    if (linkScore >= highestLinkScore){
+      highestLinkScore = linkScore
+      highestLinkScoreDevice = dId
+    }
+  }
+  // Once a device is chosen, update the node backward link score
+  if (highestLinkScoreDevice){
+    activeDevices[highestLinkScoreDevice].contributingNodesWithLinkScore[nodeId][direction]++
+  }
+
+  return highestLinkScoreDevice
+}
+
 function findDeviceForNode(nodeId){
   let mostFreeMem = 0
   let mostFreeDevId
+  // loop through all devices
   for (let dId in activeDevices){
     if (!activeDevices.hasOwnProperty(dId)) {
       continue;
@@ -235,9 +302,15 @@ function findDeviceForNode(nodeId){
 
     let freeMem = device.context.freeMem
     
+    // which node this device has
     let contribNodes = device.contributingNodes
+
+    // if this device has the node we need (nodeId), select the one that has the best memory available
+    // TODO: based on link score selection:
+    // get the link score of such node instances
+    // update the link score and return the one that has the highest link score
     if (contribNodes.includes(nodeId)){
-      if (freeMem > mostFreeMem){
+      if (freeMem >= mostFreeMem){
         mostFreeMem = freeMem
         mostFreeDevId = dId
       }
