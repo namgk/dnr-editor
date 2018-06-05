@@ -243,6 +243,7 @@ function findDeviceForNode(nodeId){
       }
     }
   }
+  console.log('most free device: ' + mostFreeDevId)
   return mostFreeDevId
 }
 
@@ -269,7 +270,6 @@ function start(){
     });
 
     ws.on('message', function(data,flags) {
-      console.log(data)
       if (ws.readyState != 1){
         return
       }
