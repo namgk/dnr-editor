@@ -316,7 +316,6 @@ function findDeviceForNode(nodeId){
       }
     }
   }
-  console.log('most free device: ' + mostFreeDevId)
   return mostFreeDevId
 }
 

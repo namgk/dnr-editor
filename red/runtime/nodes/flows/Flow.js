@@ -34,6 +34,7 @@ function Flow(global,flow) {
 
     this.start = function(diff) {
         if (1){
+            // DNR no run
             return;
         }
         var node;
@@ -128,6 +129,7 @@ function Flow(global,flow) {
 
     this.stop = function(stopList, removedList) {
         if (1) {
+            // DNR no run
             return;
         }
         return when.promise(function(resolve) {
