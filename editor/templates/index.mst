@@ -77,6 +77,7 @@
     <div id="sidebar-separator"></div>
 
 </div>
+<div id="full-shade" class="hide"></div>
 
 <div id="notifications"></div>
 <div id="dropTarget"><div data-i18n="[append]workspace.dropFlowHere"><br/><i class="fa fa-download"></i></div></div>
@@ -219,6 +220,14 @@
         <div style="height: 200px;min-height: 150px;" class="node-text-editor" id="node-input-json"></div>
     </div>
 </script>
+<script type="text/x-red" data-template-name="_markdown">
+    <div class="form-row" id="node-input-markdown-title" style="margin-bottom: 3px; text-align: right;">
+
+    </div>
+    <div class="form-row node-text-editor-row">
+        <div style="height: 200px;min-height: 150px;" class="node-text-editor" id="node-input-markdown"></div>
+    </div>
+</script>
 <script type="text/x-red" data-template-name="_buffer">
     <div id="node-input-buffer-panels">
         <div id="node-input-buffer-panel-str" class="red-ui-panel">
@@ -236,7 +245,6 @@
         </div>
     </div>
 </script>
-
 <script src="vendor/vendor.js"></script>
 <script src="vendor/jsonata/jsonata.min.js"></script>
 <script src="vendor/ace/ace.js"></script>

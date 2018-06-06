@@ -69,7 +69,7 @@ function filterNodeInfo(n) {
         r.module = n.module;
     }
     if (n.hasOwnProperty("err")) {
-        r.err = n.err.toString();
+        r.err = n.err;
     }
     return r;
 }
@@ -116,6 +116,7 @@ function saveNodeList() {
                     /* istanbul ignore else */
                     if (nodes.hasOwnProperty(node)) {
                         var config = nodes[node];
+                        // console.log(config.file)
                         var n = filterNodeInfo(config);
                         delete n.err;
                         delete n.file;
@@ -128,9 +129,10 @@ function saveNodeList() {
         }
     }
     if (hadPending && !hasPending) {
-        events.emit("runtime-event",{id:"restart-required"});
+        events.emit("runtime-event",{id:"restart-required",retain: true});
     }
     if (settings.available()) {
+        // console.log(moduleList)
         return settings.set("nodes",moduleList);
     } else {
         return when.reject("Settings unavailable");
@@ -184,8 +186,22 @@ function loadNodeConfigs() {
 function addNodeSet(id,set,version) {
     if (!set.err) {
         set.types.forEach(function(t) {
-            nodeTypeToId[t] = id;
+            if (nodeTypeToId.hasOwnProperty(t)) {
+                set.err = new Error("Type already registered");
+                set.err.code = "type_already_registered";
+                set.err.details = {
+                    type: t,
+                    moduleA: getNodeInfo(t).module,
+                    moduleB: set.module
+                }
+
+            }
         });
+        if (!set.err) {
+            set.types.forEach(function(t) {
+                nodeTypeToId[t] = id;
+            });
+        }
     }
     moduleNodes[set.module] = moduleNodes[set.module]||[];
     moduleNodes[set.module].push(set.name);
@@ -303,6 +319,7 @@ function getNodeList(filter) {
                         nodeInfo.pending_version = moduleConfigs[module].pending_version;
                     }
                     if (!filter || filter(nodes[node])) {
+                        // console.log(nodes[node])
                         list.push(nodeInfo);
                     }
                 }
@@ -412,6 +429,7 @@ function getAllNodeConfigs(lang) {
             var id = nodeList[i];
             var config = moduleConfigs[getModule(id)].nodes[getNode(id)];
             if (config.enabled && !config.err) {
+                result += "\n<!-- --- [red-module:"+id+"] --- -->\n";
                 result += config.config;
                 result += loader.getNodeHelp(config,lang||"en-US")||"";
                 //script += config.script;
@@ -434,7 +452,7 @@ function getNodeConfig(id,lang) {
     }
     config = config.nodes[getNode(id)];
     if (config) {
-        var result = config.config;
+        var result = "<!-- --- [red-module:"+id+"] --- -->\n"+config.config;
         result += loader.getNodeHelp(config,lang||"en-US")
 
         //if (config.script) {
@@ -579,6 +597,25 @@ var defaultIcon = path.resolve(__dirname + '/../../../../public/icons/arrow-in.p
 function nodeIconDir(dir) {
     icon_paths[dir.name] = icon_paths[dir.name] || [];
     icon_paths[dir.name].push(path.resolve(dir.path));
+
+    if (dir.icons) {
+        if (!moduleConfigs[dir.name]) {
+            moduleConfigs[dir.name] = {
+                name: dir.name,
+                nodes: {},
+                icons: []
+            };
+        }
+        var module = moduleConfigs[dir.name];
+        if (module.icons === undefined) {
+            module.icons = [];
+        }
+        dir.icons.forEach(function(icon) {
+            if (module.icons.indexOf(icon) === -1) {
+                module.icons.push(icon);
+            }
+        });
+    }
 }
 
 function getNodeIconPath(module,icon) {
@@ -607,6 +644,20 @@ function getNodeIconPath(module,icon) {
     }
 }
 
+function getNodeIcons() {
+    var iconList = {};
+
+    for (var module in moduleConfigs) {
+        if (moduleConfigs.hasOwnProperty(module)) {
+            if (moduleConfigs[module].icons) {
+                iconList[module] = moduleConfigs[module].icons;
+            }
+        }
+    }
+
+    return iconList;
+}
+
 var registry = module.exports = {
     init: init,
     load: load,
@@ -629,6 +680,7 @@ var registry = module.exports = {
     getModuleInfo: getModuleInfo,
 
     getNodeIconPath: getNodeIconPath,
+    getNodeIcons: getNodeIcons,
     /**
      * Gets all of the node template configs
      * @return all of the node templates in a single string

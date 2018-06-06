@@ -20,7 +20,7 @@ var os = require('os');
 var fs = require('fs-extra');
 var sinon = require('sinon');
 var tailNode = require("../../../../nodes/core/storage/28-tail.js");
-var helper = require("../../helper.js");
+var helper = require("node-red-node-test-helper");
 
 describe('tail Node', function() {
 
@@ -130,15 +130,20 @@ describe('tail Node', function() {
         });
     }
 
-    it('should throw an error if run on Windows', function(done) {
+    it('should throw an error if run on Windows', function() {
         // Stub os platform so we can make it look like windows
         var os = require('os');
         var spy = sinon.stub(os, 'platform', function(arg) { return("windows"); });
 
         /*jshint immed: false */
-        (function() { tailNode("1234"); }).should.throw();
-        os.platform.restore();
-        done();
+        try {
+            (function() { tailNode("1234"); }).should.throw();
+        } catch (err) {
+            throw err;
+        }
+        finally {
+            os.platform.restore();
+        }
     });
 
     /*

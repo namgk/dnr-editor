@@ -42,7 +42,8 @@
     </div>
     <div class="form-row">
         <label for="node-input-timer"><i class="fa fa-clock-o"></i> <span data-i18n="exec.label.timeout"></span></label>
-        <input type="text" id="node-input-timer" style="width:65px;" data-i18n="[placeholder]exec.label.timeoutplace"> seconds
+        <input type="text" id="node-input-timer" style="width:65px;" data-i18n="[placeholder]exec.label.timeoutplace">
+        <span data-i18n="exec.label.seconds"></span>
     </div>
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
@@ -74,11 +75,19 @@
                 <dt>payload <span class="property-type">string</span></dt>
                 <dd>the standard output of the command.</dd>
             </dl>
+            <dl class="message-properties">
+                <dt>rc <span class="property-type">object</span></dt>
+                <dd>exec mode only, a copy of the return code object (also available on port 3)</dd>
+            </dl>
         </li>
         <li>Standard error
             <dl class="message-properties">
                 <dt>payload <span class="property-type">string</span></dt>
                 <dd>the standard error of the command.</dd>
+            </dl>
+            <dl class="message-properties">
+                <dt>rc <span class="property-type">object</span></dt>
+                <dd>exec mode only, a copy of the return code object (also available on port 3)</dd>
             </dl>
         </li>
         <li>Return code
@@ -106,6 +115,7 @@
     the type of signal to be sent, for example, <code>SIGINT</code>, <code>SIGQUIT</code> or <code>SIGHUP</code>.
     Defaults to <code>SIGTERM</code> if set to an empty string.</p>
     <p>If the node has more than one process running then <code>msg.pid</code> must also be set with the value of the PID to be killed.</p>
+    <p>If a value is provided in the <code>Timeout</code> field then, if the process has not completed when the specified number of seconds has elapsed, the process will be killed automatically</p>
     <p>Tip: if running a Python app you may need to use the <code>-u</code> parameter to stop the output being buffered.</p>
 </script>
 
@@ -128,7 +138,7 @@
         icon: "arrow-in.png",
         align: "right",
         label: function() {
-            return this.name||this.command;
+            return this.name||this.command||(this.useSpawn=="true"?this._("exec.spawn"):this._("exec.exec"));
         },
         labelStyle: function() {
             return this.name?"node_label_italic":"";

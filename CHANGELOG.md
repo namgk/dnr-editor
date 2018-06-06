@@ -1,3 +1,296 @@
+#### 0.18.7: Maintenance Release
+
+Editor Fixes
+
+ - Do not trim wires if node declares outputs in defaults but misses value Fixes #1737
+
+Node Fixes
+
+ - Relax twitter node version ready for major version bump
+ - Pass Date into the Function node sandbox to fix instanceof tests
+ - let TCP in node report remote ip and port when in single packet mode
+ - typo fix in node help (#1735)
+
+Other Fixes
+ - Tidy up default grunt task and fixup test break due to reorder Fixes #1738
+ - Bump jsonata version
+
+#### 0.18.6: Maintenance Release
+
+Editor Fixes
+
+ - Handle a node having wires in the editor on ports it no longer has Fixes #1724
+ - Add missing ACE snippet files
+ - Fix wireClippedNodes is not defined Fixes #1726
+ - Split node html to isolate bad nodes when loading
+ - Avoid unnecessary use of .html() where .text() will do
+
+ - Add editorTheme.projects.enabled to default settings.js"
+
+#### 0.18.5: Maintenance Release
+
+Projects
+
+ - Add clone project to welcome screen
+ - Handle cloning a project without package.json
+ - Keep remote branch state in sync between editor and runtime
+
+New Features
+
+ - Add type checks to switch node options (#1714)
+ - add output property select to HTML parse node (#1701)
+ - Add Prevent Following Redirect to HTTP Request node (#615) (#1684)
+ - Add debug and trace functions to function node (#1654)
+ - Enable user defined icon for subflow
+ - Add MQTT disconnect message and rework broker node UI (#1719)
+ - Japanese message catalogue updates (#1723)
+ - Show node load errors in the Palette Manager view
+
+Editor Fixes
+
+ - Highlight subflow node when log msg comes from inside Fixes #1698
+ - Ensure node wires array is not longer than outputs value Fixes #1678
+ - Allow importing an unknown config node to be undone Fixes #1681
+ - Ensure keyboard shortcuts get saved in runtime settings Fixes #1696
+ - Don't mark a subflow changed when actually modified nothing (#1665)
+
+Node Fixes
+
+ - bind to correct port when doing udp broadcast/multicast (#1686)
+ - Provide full error stack in Function node log message (#1700)
+ - Fix http request doc type Fixes #1690
+ - Make debug slightly larger to pass WCAG AA rating
+ - Make core nodes labels more consistent, to close #1673
+ - Allow template node to be updated more than once Fixes #1671
+ - Fix the problem that output labels of switch node sometimes disappear (#1664)
+ - Chinese translations for core nodes (#1607)
+
+Runtime Fixes
+
+ - Handle and display for invalid flow credentials when project is disabled #1689 (#1694)
+ - node-red-pi: fix behavior with old bash version (#1713)
+ - Fix ENOENT error on first start when no user dir (#1711)
+ - Handle null error object in Flow.handleError Fixes #1721
+ - update settings comments to describe how to setup for ipv6 (#1675)
+ - Remove credential props after diffing flow to prevent future false positives Fixes #1359
+ - Log error if settings unavailable when saving user settings Fixes #1645
+ - Keep backup of .config.json
+ - Add warning if using \_credentialSecret from .config.json
+ - Filter req.user in /settings to prevent potentially leaking info
+
+#### 0.18.4: Maintenance Release
+
+Projects
+
+ - Ensure sshkey file path is properly escaped on Windows
+ - Normalize ssh key paths for Windows file names
+ - Ensure userDir is an absolute path when used with sshkeygen
+ - Detect if there are no existing flows to migrate into a project
+ - Use relative urls when retriving flow history
+ - Add credentialSecret to clone pane
+ - Delay clearing inflight when changing credentials key
+ - Mark deploy inflight when reverting a file change
+ - Handle missing_flow_file error on clone properly
+ - Remote project from cached list on delete so it can be reused
+ - Fix tests for existing file flag in settings
+
+Editor Fixes
+
+ - Fix merging a remote diff
+ - Fixed the problems when using a node without defaults
+ - Disable user defined icon for subflow
+ - getDefaultNodeIcon should handle subflow instance nodes Fixes #1635
+ - Add Japanese info text for core nodes
+ - Fix message lookup for core nodes in case of i18 locales directory exists
+ - Prevent the last tab from being deleted
+
+Node Fixes
+
+ - Ensure trigger gets reset when 2nd output is null
+
+
+#### 0.18.3: Maintenance Release
+
+Projects
+
+ - Fix permissions on git/ssh scripts
+ - Add support for GIT_SSH on older levels of git
+ - Handle host key verification as auth error
+ - Ensure commit list has a refs object even if empty
+ - Make git error detection case-insensitive
+ - Fix up merge conflict handling
+ - Use flow-diff when looking at flow file changes
+
+Node Fixes
+
+ - Ensure debug tools show for 'complete msg object'
+ - Fix msg.parts handling in concat mode of Batch node
+
+Editor Fixes
+
+ - Fix offset calculation when dragging node from palette
+ - Allow a library entry to use non-default node-input- prefixes
+ - Change remote-diff shortcut and add it to keymap Fixes #1628
+
+#### 0.18.2: Maintenance Release
+
+Projects
+
+ - Filter out %D from git log command for older git versions
+ - Ensure projects are created as logged in user
+ - Better error handling/reporting in project creation
+ - Add Project Settings menu option
+ - Refresh vc sidebar on remote add/remove
+ - Fix auth prompt for ssh repos
+ - Prevent http git urls from including username/pword
+ - Fix fetch auth handling on non-default remote
+ - Avoid exception if git not installed
+ - Check version of git client on startup
+ - Fix pull/push when no tracked branch
+ - Add git_pull_unrelated_history handling
+ - Handle delete of last remote in project settings
+
+Node Fixes
+
+ - Fix and Add some Chinese translations
+ - Update sort/batch docs
+ - Don't assume node has defaults when exporting icon property
+ - Ensure send is last thing trigger does
+ - Ensure trigger doesn't set two simultaneous timeouts
+ - Add missing property select var to HTML node
+ - Add a default keepalive to tcp client mode
+ - Move node.send in exec and httprequest nodes
+
+
+#### 0.18.1: Maintenance Release
+
+Projects
+
+ - Handle more repo clone error cases
+ - Relax validation of git urls
+ - Revalidate project name on return to project-details view
+ - Avoid unnecessary project refresh on branch-switch Fixes #1597
+ - Add support for file:// git urls
+ - Handle project first-run without existing flow file
+ - Handle delete of last remote in project settings
+ - Add git_pull_unrelated_history handling
+ - Fix pull/push when no tracked branch
+ - Remember to disable projects in editor when git not found
+
+Node Fixes
+
+ - Trigger node migration - ensure bytopic not blank
+ - Add HEAD to list of methods with no body in http req node #1598
+ - Do not include payload in GET requests Fixes #1598
+ - Update sort/batch docs Fixes #1601
+ - Don't assume node has defaults when exporting icon property
+
+
+#### 0.18: Milestone Release
+
+Runtime
+
+ - Beta: Projects - must be enabled in settings file
+ - Allow port zero for Express (#1363)
+ - Better error reporting when module provides duplicate type
+ - Update jsonata to 1.5.0
+ - add express-session memorystore without leaks (#1435)
+ - Allow adminAuth.user to be a Function Fixes #1461
+ - Ensure RED.server is set even if admin api disabled
+ - Ensure strategy login button uses relative URL Fixes #1481
+ - ignore `_msgid` when merging full objects
+ - Move node install to spawn to allow for big stdout Fixes #1488
+ - SIGINT handler should wait for stop to complete before exit
+
+Editor
+
+ - allow a node's icon to be set dynamically (#1490)
+ - Batch messages sent over comms to increase throughput
+ - Migrate deploy confirmations to notifications
+ - `oneditdelete` should be available to all node types Closes #1346
+ - Sort typeSearch results based on position of match
+ - Update ACE to test and add python highlighter (#1373)
+ - Clear mouse state when typeSearch cancelled Fixes #1517
+ - Handle scoped modules via palette editor
+ - TypedInput: handle user defined value/labels options Fixes #1549
+
+Nodes
+
+ - add msg. select to range and yaml nodes
+ - add property choice to xml, sentiment nodes
+ - mqtt: Add 'name' to mqtt-broker node, and label it by this if it is set. (#1364)
+ - Add option to JSON node to ensure particular encoding
+ - add parts support for HTML node (#1495)
+ - Add passphrase to TLS node
+ - Add rc property to exec node outputs 1 and 2 (#1401)
+ - Add skip first n lines capability to csv node (#1535)
+ - Add support for rejectUnauthorized msg property
+ - Add TLS options to WebSocket client
+ - Added parsed YAML support for template node (#1443)
+ - Allow delay node in rate-limit mode to be reset Fixes #1360
+ - Allow setTimeout in Function node to be promisified in node 8
+ - Debug to status option (#1499)
+ - enable template config via msg.template for stored or generated templates (#1503)
+ - HTTP REQUEST: Adding PROPPATCH and PROPFIND http methods (#1531)
+ - Initial support of merge & reduce mode for JOIN node (#1546)
+ - Initial support of new BATCH node (#1548)
+ - Initial support of sequence rules for SWITCH node (#1545)
+ - initial support of SORT node (#1500)
+ - Inject node - let once delay be editable (#1541)
+ - Introduce `nodeMaxMessageBufferLength` setting for msg sequence nodes
+ - Let CSV correct parts if we remove header row.
+ - let default apply if msg.delay not set in override mode. (#1397)
+ - let trigger node be reset by boolean message (#1554)
+ - Let trigger node support per topic mode (#1398)
+ - let HTML node return empty array for no matching input (#1582)
+ - MQTT node - if Server/URL config contains '//' use it as a complete url; enabled ws:// and wss://
+ - clone messages before delayed send (#1474)
+ - Decrement connected client count rather than show disconnected
+ - Don't end mqtt client on first error Fixes #1566
+ - File out - create dirs synchronously to ensure they exist Fixes #1489
+ - Fix debug message format for Buffer (#1444)
+ - Fix global.keys() bug in function node (#1417)
+ - Handle escape characters in template node which uses Mustache format and JSON output mode (#1377)
+ - Move all node.send to end of timer functions in trigger node (issue #1527) (#1539)
+ - Publish null/undefined to mqtt as blank not toString Fixes #1521
+ - remove inject node at specific time spinner
+ - restrict inject interval to less that 2^31 millisecs
+ - tag UDP ports in use properly so they get closed correctly (#1508)
+
+#### 0.17.5: Maintenance Release
+
+ - Add express-session missing dependency for oauth
+ - Fix improper type tests is core test cases
+ - File node: recreate write stream when file deleted Fixes #1351
+ - Add flow stopping trace messages
+ - Fix userDir test case when .config.json exists (#1350)
+ - Do not try to send msg after http request error handled Fixes #1344
+ - Fix boundary problem in range node (#1338)
+ - Modify messages in node properties to refer messages.json (#1339)
+ - Fix settings.js replacing webSocketVerifyClient by webSocketNodeVerifyClient (#1343)
+
+
+#### 0.17.4: Maintenance Release
+
+ - Add request node test case for POSTing 0
+ - Allow false and 0 in payload for httprequest (#1334)
+ - Add file extension into flow name of library automatically (#1331)
+ - Fix accessing global context from jsonata expressions Fixes #1335
+ - Disable editor whilst a deploy is inflight Fixes #1332
+ - Replace Unknown nodes with their real versions when node loaded
+ - Retry auto-install of modules that fail
+ - Fix column name in link nodes to refer language file (#1330)
+ - Use namespaces with link node title attributes i18n name Fixes #1329
+ - Tidy up GPIO pin table presentation Fixes #1328
+ - Join: count of 0 should not send on every msg
+ - Handle importing only one end of a link node pair
+ - Make sending to Debug synchronous again Fixes #1323
+ - Make send-error behaviour optional in file node
+ - Restore File In node behaviour of sending msg on error
+ - Expose context.keys within Function node
+ - JSON parser default should be not formatting output
+
+
 #### 0.17.3: Maintenance Release
 
  - Fix flow library in menu to support period characters as flow name (#1320)
@@ -855,7 +1148,7 @@ Fixes
 #### 0.10.10: Maintenance Release
 
  - Fix permissions issue with packaged nrgpio script
-- Add better help message if deprecated node missing
+ - Add better help message if deprecated node missing
 
 
 
@@ -867,16 +1160,16 @@ Fix packaging of bin scripts
 
 #### 0.10.8: Maintenance Release
 
-- Nodes moved out of core
-  - still included as a dependency: twitter, serial, email, feedparser
+ - Nodes moved out of core
+ - still included as a dependency: twitter, serial, email, feedparser
  - no longer included: mongo, arduino, irc, redis
-- node icon defn can be a function
-- http_proxy support
-- httpNodeMiddleware setting
-- Trigger node ui refresh
-- editorTheme setting
-- Warn on deploy of unused config nodes
-- catch node prevents error loops
+ - node icon defn can be a function
+ - http_proxy support
+ - httpNodeMiddleware setting
+ - Trigger node ui refresh
+ - editorTheme setting
+ - Warn on deploy of unused config nodes
+ - catch node prevents error loops
 
 
 
@@ -899,14 +1192,14 @@ Changes:
 
 Changes:
 
-- http request node passes on request url as msg.url
-- handle config nodes appearing out of order in flow file - don't assume they are always at the start
-- move subflow palette category to the top, to make it more obvious
-- fix labelling of Raspberry Pi pins
-- allow email node to mark mail as read
-- fix saving library content
-- add node-red and node-red-pi start scripts
-- use $HOME/.node-red for user data unless specified otherwise (or existing data is found in install dir)
+ - http request node passes on request url as msg.url
+ - handle config nodes appearing out of order in flow file - don't assume they are always at the start
+ - move subflow palette category to the top, to make it more obvious
+ - fix labelling of Raspberry Pi pins
+ - allow email node to mark mail as read
+ - fix saving library content
+ - add node-red and node-red-pi start scripts
+ - use $HOME/.node-red for user data unless specified otherwise (or existing data is found in install dir)
 
 
 

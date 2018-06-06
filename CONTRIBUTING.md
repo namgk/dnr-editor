@@ -9,7 +9,7 @@ We welcome contributions, but request you follow these guidelines.
 
 This project adheres to the [Contributor Covenant 1.4](http://contributor-covenant.org/version/1/4/).
 By participating, you are expected to uphold this code. Please report unacceptable
-behavior to any of the [project's core team](https://github.com/orgs/node-red/teams/core).
+behavior to the project's core team at team@nodered.org.
 
 ## Raising issues
 
@@ -30,13 +30,13 @@ At a minimum, please include:
 
 ## Feature requests
 
-For feature requests, please raise them on the [mailing list](https://groups.google.com/forum/#!forum/node-red).
+For feature requests, please raise them on the [forum](https://discourse.nodered.org).
 
 ## Pull-Requests
 
 If you want to raise a pull-request with a new feature, or a refactoring
 of existing code, it may well get rejected if you haven't discussed it on
-the [mailing list](https://groups.google.com/forum/#!forum/node-red) first.
+the [forum](https://discourse.nodered.org) first.
 
 All contributors need to sign the JS Foundation's Contributor License Agreement.
 It is an online process and quick to do. You can read the details of the agreement

@@ -108,6 +108,9 @@ module.exports = function(RED) {
                     }
                 }
             }
+            if (msg.hasOwnProperty('followRedirects')) {
+                opts.followRedirects = msg.followRedirects;
+                }
             if (msg.cookies) {
                 var cookies = [];
                 if (opts.headers.hasOwnProperty('cookie')) {
@@ -135,7 +138,7 @@ module.exports = function(RED) {
             }
             var payload = null;
 
-            if (msg.payload && (method == "POST" || method == "PUT" || method == "PATCH" ) ) {
+            if (method !== 'GET' && method !== 'HEAD' && typeof msg.payload !== "undefined") {
                 if (typeof msg.payload === "string" || Buffer.isBuffer(msg.payload)) {
                     payload = msg.payload;
                 } else if (typeof msg.payload == "number") {
@@ -196,6 +199,10 @@ module.exports = function(RED) {
             }
             if (tlsNode) {
                 tlsNode.addTLSOptions(opts);
+            } else {
+                if (msg.hasOwnProperty('rejectUnauthorized')) {
+                    opts.rejectUnauthorized = msg.rejectUnauthorized;
+                }
             }
             var req = ((/^https/.test(urltotest))?https:http).request(opts,function(res) {
                 // Force NodeJs to return a Buffer (instead of a string)
@@ -244,19 +251,24 @@ module.exports = function(RED) {
                         }
                     }
 
-                    // Convert the payload to the required return type
-                    msg.payload = Buffer.concat(msg.payload); // bin
-                    if (node.ret !== "bin") {
-                        msg.payload = msg.payload.toString('utf8'); // txt
+                    // Check that msg.payload is an array - if the req error
+                    // handler has been called, it will have been set to a string
+                    // and the error already handled - so no further action should
+                    // be taken. #1344
+                    if (Array.isArray(msg.payload)) {
+                        // Convert the payload to the required return type
+                        msg.payload = Buffer.concat(msg.payload); // bin
+                        if (node.ret !== "bin") {
+                            msg.payload = msg.payload.toString('utf8'); // txt
 
-                        if (node.ret === "obj") {
-                            try { msg.payload = JSON.parse(msg.payload); } // obj
-                            catch(e) { node.warn(RED._("httpin.errors.json-error")); }
+                            if (node.ret === "obj") {
+                                try { msg.payload = JSON.parse(msg.payload); } // obj
+                                catch(e) { node.warn(RED._("httpin.errors.json-error")); }
+                            }
                         }
+                        node.status({});
+                        node.send(msg);
                     }
-
-                    node.send(msg);
-                    node.status({});
                 });
             });
             req.setTimeout(node.reqTimeout, function() {
@@ -270,8 +282,8 @@ module.exports = function(RED) {
                 node.error(err,msg);
                 msg.payload = err.toString() + " : " + url;
                 msg.statusCode = err.code;
-                node.send(msg);
                 node.status({fill:"red",shape:"ring",text:err.code});
+                node.send(msg);
             });
             if (payload) {
                 req.write(payload);

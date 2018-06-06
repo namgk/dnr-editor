@@ -16,7 +16,7 @@
 
 var should = require("should");
 var templateNode = require("../../../../nodes/core/core/80-template.js");
-var helper = require("../../helper.js");
+var helper = require("node-red-node-test-helper");
 
 describe('template node', function() {
 
@@ -24,24 +24,98 @@ describe('template node', function() {
         helper.startServer(done);
     });
 
+    after(function(done) {
+        helper.stopServer(done);
+    });
+
     afterEach(function() {
         helper.unload();
     });
 
 
-    it('should modify payload', function(done) {
+    it('should modify payload using node-configured template', function(done) {
         var flow = [{id:"n1", type:"template", field:"payload", template:"payload={{payload}}",wires:[["n2"]]},{id:"n2",type:"helper"}];
         helper.load(templateNode, flow, function() {
             var n1 = helper.getNode("n1");
             var n2 = helper.getNode("n2");
             n2.on("input", function(msg) {
-                msg.should.have.property('topic', 'bar');
-                msg.should.have.property('payload', 'payload=foo');
-                done();
+                try {
+                    msg.should.have.property('topic', 'bar');
+                    msg.should.have.property('payload', 'payload=foo');
+                    msg.should.have.property('template', 'this should be ignored as the node has its own template {{payload}}');
+                    done();
+                } catch(err) {
+                    done(err);
+                }
             });
-            n1.receive({payload:"foo",topic: "bar"});
+            n1.receive({payload:"foo",topic: "bar", template: "this should be ignored as the node has its own template {{payload}}"});
         });
     });
+
+    it('should modify the configured property using msg.template', function(done) {
+        var flow = [{id:"n1", type:"template", field:"randomProperty", template:"",wires:[["n2"]]},{id:"n2",type:"helper"}];
+        helper.load(templateNode, flow, function() {
+            var n1 = helper.getNode("n1");
+            var n2 = helper.getNode("n2");
+            n2.on("input", function(msg) {
+                msg.should.have.property('topic', 'bar');
+                msg.should.have.property('payload', 'foo');
+                msg.should.have.property('template', 'payload={{payload}}');
+                msg.should.have.property('randomProperty', 'payload=foo');
+                done();
+            });
+            n1.receive({payload:"foo", topic: "bar", template: "payload={{payload}}"});
+        });
+    });
+
+    it('should be able to overwrite msg.template using the template from msg.template', function(done) {
+        var flow = [{id:"n1", type:"template", field:"payload", template:"",wires:[["n2"]]},{id:"n2",type:"helper"}];
+        helper.load(templateNode, flow, function() {
+            var n1 = helper.getNode("n1");
+            var n2 = helper.getNode("n2");
+            n2.on("input", function(msg) {
+                msg.should.have.property('topic', 'bar');
+                msg.should.have.property('payload', 'topic=bar');
+                msg.should.have.property('template', 'topic={{topic}}');
+                done();
+            });
+            n1.receive({payload:"foo", topic: "bar", template: "topic={{topic}}"});
+        });
+    });
+
+    it('should modify payload from msg.template', function(done) {
+        var flow = [{id:"n1", type:"template", field:"payload", template:"",wires:[["n2"]]},{id:"n2",type:"helper"}];
+        helper.load(templateNode, flow, function() {
+            var n1 = helper.getNode("n1");
+            var n2 = helper.getNode("n2");
+            var received = [];
+            n2.on("input", function(msg) {
+                try {
+                    received.push(msg);
+                    if (received.length === 3) {
+                        received[0].should.have.property('topic', 'bar');
+                        received[0].should.have.property('payload', 'topic=bar');
+                        received[0].should.have.property('template', 'topic={{topic}}');
+
+                        received[1].should.have.property('topic', 'another bar');
+                        received[1].should.have.property('payload', 'topic=another bar');
+                        received[1].should.have.property('template', 'topic={{topic}}');
+
+                        received[2].should.have.property('topic', 'bar');
+                        received[2].should.have.property('payload', 'payload=foo');
+                        received[2].should.have.property('template', 'payload={{payload}}');
+                        done();
+                    }
+                } catch(err) {
+                    done(err);
+                }
+            });
+            n1.receive({payload:"foo", topic: "bar", template: "topic={{topic}}"});
+            n1.receive({payload:"foo", topic: "another bar", template: "topic={{topic}}"});
+            n1.receive({payload:"foo", topic: "bar", template: "payload={{payload}}"});
+        });
+    });
+
 
     it('should modify payload from flow context', function(done) {
         var flow = [{id:"n1",z:"t1", type:"template", field:"payload", template:"payload={{flow.value}}",wires:[["n2"]]},{id:"n2",z:"t1",type:"helper"}];
@@ -88,6 +162,18 @@ describe('template node', function() {
         });
     });
 
+    it('should handle escape characters in Mustache format and JSON output mode', function(done) {
+        var flow = [{id:"n1", type:"template", field:"payload", syntax:"mustache", template:"{\"data\":\"{{payload}}\"}", output:"json", wires:[["n2"]]},{id:"n2",type:"helper"}];
+        helper.load(templateNode, flow, function() {
+            var n1 = helper.getNode("n1");
+            var n2 = helper.getNode("n2");
+            n2.on("input", function(msg) {
+                msg.payload.should.have.property('data', 'line\t1\nline\\2\r\nline\b3\f');
+                done();
+            });
+            n1.receive({payload:"line\t1\nline\\2\r\nline\b3\f"});
+        });
+    });
 
     it('should modify payload in plain text mode', function(done) {
         var flow = [{id:"n1", type:"template", field:"payload", syntax:"plain", template:"payload={{payload}}",wires:[["n2"]]},{id:"n2",type:"helper"}];

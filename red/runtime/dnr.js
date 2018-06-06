@@ -71,6 +71,14 @@ function init(_server,_runtime) {
       })
     }
 
+    _runtime.adminApi.adminApp.get("/debug/view/*",function(req,res) {
+        var options = {
+            root: __dirname + '/../../nodes/core/core/lib/debug/',
+            dotfiles: 'deny'
+        };
+        res.sendFile(req.params[0], options);
+    });
+
     res.json(activeDevicesTemp)
   })
 

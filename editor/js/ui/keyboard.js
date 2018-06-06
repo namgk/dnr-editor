@@ -57,8 +57,24 @@ RED.keyboard = (function() {
         173:189
     }
 
+    function migrateOldKeymap() {
+        if ('localStorage' in window && window['localStorage'] !== null) {
+            var oldKeyMap = localStorage.getItem("keymap");
+            if (oldKeyMap !== null) {
+                localStorage.removeItem("keymap");
+                var currentEditorSettings = RED.settings.get('editor') || {};
+                currentEditorSettings.keymap  = JSON.parse(oldKeyMap);
+                RED.settings.set('editor',currentEditorSettings);
+            }
+        }
+    }
     function init() {
-        var userKeymap = RED.settings.get('keymap') || {};
+        // Migrate from pre-0.18
+        migrateOldKeymap();
+
+        var currentEditorSettings = RED.settings.get('editor') || {};
+        var userKeymap = currentEditorSettings.keymap || {};
+
         $.getJSON("red/keymap.json",function(data) {
             for (var scope in data) {
                 if (data.hasOwnProperty(scope)) {
@@ -67,12 +83,12 @@ RED.keyboard = (function() {
                         if (keys.hasOwnProperty(key)) {
                             if (!userKeymap.hasOwnProperty(keys[key])) {
                                 addHandler(scope,key,keys[key],false);
-                                defaultKeyMap[keys[key]] = {
-                                    scope:scope,
-                                    key:key,
-                                    user:false
-                                };
                             }
+                            defaultKeyMap[keys[key]] = {
+                                scope:scope,
+                                key:key,
+                                user:false
+                            };
                         }
                     }
                 }
@@ -89,7 +105,7 @@ RED.keyboard = (function() {
 
         RED.userSettings.add({
             id:'keyboard',
-            title: 'Keyboard',
+            title: RED._("keyboard.keyboard"),
             get: getSettingsPane,
             focus: function() {
                 setTimeout(function() {
@@ -350,7 +366,8 @@ RED.keyboard = (function() {
                 $(this).toggleClass("input-error",!valid);
             })
 
-            var scopeSelect = $('<select><option value="*">global</option><option value="workspace">workspace</option></select>').appendTo(scope);
+            var scopeSelect = $('<select><option value="*" data-i18n="keyboard.global"></option><option value="workspace" data-i18n="keyboard.workspace"></option></select>').appendTo(scope);
+            scopeSelect.i18n();
             scopeSelect.val(object.scope||'*');
 
             var div = $('<div class="keyboard-shortcut-edit button-group-vertical"></div>').appendTo(scope);
@@ -368,8 +385,12 @@ RED.keyboard = (function() {
                 container.removeClass('keyboard-shortcut-entry-expanded');
                 var shortcut = RED.keyboard.getShortcut(object.id);
                 var userKeymap = RED.settings.get('keymap') || {};
-                delete userKeymap[object.id];
-                RED.settings.set('keymap',userKeymap);
+
+                var currentEditorSettings = RED.settings.get('editor') || {};
+                var userKeymap = currentEditorSettings.keymap || {};
+                userKeymap[object.id] = null;
+                currentEditorSettings.keymap = userKeymap;
+                RED.settings.set('editor',currentEditorSettings);
 
                 var obj = {
                     id:object.id,
@@ -418,9 +439,12 @@ RED.keyboard = (function() {
                             object.scope = scope;
                             RED.keyboard.add(object.scope,object.key,object.id,true);
                         }
-                        var userKeymap = RED.settings.get('keymap') || {};
+
+                        var currentEditorSettings = RED.settings.get('editor') || {};
+                        var userKeymap = currentEditorSettings.keymap || {};
                         userKeymap[object.id] = RED.keyboard.getShortcut(object.id);
-                        RED.settings.set('keymap',userKeymap);
+                        currentEditorSettings.keymap = userKeymap;
+                        RED.settings.set('editor',currentEditorSettings);
                     }
                 }
             }
@@ -468,9 +492,9 @@ RED.keyboard = (function() {
         var pane = $('<div id="user-settings-tab-keyboard"></div>');
 
         $('<div class="keyboard-shortcut-entry keyboard-shortcut-list-header">'+
-        '<div class="keyboard-shortcut-entry-key keyboard-shortcut-entry-text"><input id="user-settings-tab-keyboard-filter" type="text" placeholder="filter actions"></div>'+
-        '<div class="keyboard-shortcut-entry-key">shortcut</div>'+
-        '<div class="keyboard-shortcut-entry-scope">scope</div>'+
+        '<div class="keyboard-shortcut-entry-key keyboard-shortcut-entry-text"><input id="user-settings-tab-keyboard-filter" type="text" data-i18n="[placeholder]keyboard.filterActions"></div>'+
+        '<div class="keyboard-shortcut-entry-key" data-i18n="keyboard.shortcut"></div>'+
+        '<div class="keyboard-shortcut-entry-scope" data-i18n="keyboard.scope"></div>'+
         '</div>').appendTo(pane);
 
         pane.find("input").searchBox({

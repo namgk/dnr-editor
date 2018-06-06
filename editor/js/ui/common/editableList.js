@@ -75,7 +75,7 @@
                         addLabel = 'add';
                     }
                 }
-                $('<a href="#" class="editor-button editor-button-small" style="margin-top: 4px;"><i class="fa fa-plus"></i> '+addLabel+'</a>')
+                $('<a href="#" class="editor-button editor-button-small red-ui-editableList-addButton" style="margin-top: 4px;"><i class="fa fa-plus"></i> '+addLabel+'</a>')
                     .appendTo(this.topContainer)
                     .click(function(evt) {
                         evt.preventDefault();
@@ -85,7 +85,7 @@
             if (this.element.css("position") === "absolute") {
                 ["top","left","bottom","right"].forEach(function(s) {
                     var v = that.element.css(s);
-                    if (s!=="auto" && s!=="") {
+                    if (v!=="auto" && v!=="") {
                         that.topContainer.css(s,v);
                         that.uiContainer.css(s,"0");
                         that.element.css(s,'auto');
@@ -115,6 +115,11 @@
             if (minHeight !== '0px') {
                 this.uiContainer.css("minHeight",minHeight);
                 this.element.css("minHeight",0);
+            }
+            var maxHeight = this.element.css("maxHeight");
+            if (maxHeight !== '0px') {
+                this.uiContainer.css("maxHeight",maxHeight);
+                this.element.css("maxHeight",null);
             }
             if (this.options.height !== 'auto') {
                 this.uiContainer.css("overflow-y","scroll");

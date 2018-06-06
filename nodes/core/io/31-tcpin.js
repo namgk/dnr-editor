@@ -52,6 +52,7 @@ module.exports = function(RED) {
                     node.log(RED._("tcpin.status.connected",{host:node.host,port:node.port}));
                     node.status({fill:"green",shape:"dot",text:"common.status.connected"});
                 });
+                client.setKeepAlive(true,120000);
                 connectionPool[id] = client;
 
                 client.on('data', function (data) {
@@ -123,11 +124,14 @@ module.exports = function(RED) {
                 clearTimeout(reconnectTimeout);
                 if (!node.connected) { done(); }
             });
-        } else {
+        }
+        else {
             var server = net.createServer(function (socket) {
                 socket.setKeepAlive(true,120000);
                 if (socketTimeout !== null) { socket.setTimeout(socketTimeout); }
                 var id = (1+Math.random()*4294967295).toString(16);
+                var fromi;
+                var fromp;
                 connectionPool[id] = socket;
                 count++;
                 node.status({text:RED._("tcpin.status.connections",{count:count})});
@@ -153,18 +157,21 @@ module.exports = function(RED) {
                             msg._session = {type:"tcp",id:id};
                             node.send(msg);
                         }
-                    } else {
+                    }
+                    else {
                         if ((typeof data) === "string") {
                             buffer = buffer+data;
                         } else {
                             buffer = Buffer.concat([buffer,data],buffer.length+data.length);
                         }
+                        fromi = socket.remoteAddress;
+                        fromp = socket.remotePort;
                     }
                 });
                 socket.on('end', function() {
                     if (!node.stream || (node.datatype === "utf8" && node.newline !== "")) {
                         if (buffer.length > 0) {
-                            var msg = {topic:node.topic, payload:buffer, ip:socket.remoteAddress, port:socket.remotePort};
+                            var msg = {topic:node.topic, payload:buffer, ip:fromi, port:fromp};
                             msg._session = {type:"tcp",id:id};
                             node.send(msg);
                         }
@@ -184,6 +191,7 @@ module.exports = function(RED) {
                     node.log(err);
                 });
             });
+
             server.on('error', function(err) {
                 if (err) {
                     node.error(RED._("tcpin.errors.cannot-listen",{port:node.port,error:err.toString()}));
@@ -237,6 +245,7 @@ module.exports = function(RED) {
                     node.log(RED._("tcpin.status.connected",{host:node.host,port:node.port}));
                     node.status({fill:"green",shape:"dot",text:"common.status.connected"});
                 });
+                client.setKeepAlive(true,120000);
                 client.on('error', function (err) {
                     node.log(RED._("tcpin.errors.error",{error:err.toString()}));
                 });
@@ -288,7 +297,8 @@ module.exports = function(RED) {
                 if (!node.connected) { done(); }
             });
 
-        } else if (node.beserver == "reply") {
+        }
+        else if (node.beserver == "reply") {
             node.on("input",function(msg) {
                 if (msg._session && msg._session.type == "tcp") {
                     var client = connectionPool[msg._session.id];
@@ -314,7 +324,8 @@ module.exports = function(RED) {
                     }
                 }
             });
-        } else {
+        }
+        else {
             var connectedSockets = [];
             node.status({text:RED._("tcpin.status.connections",{count:0})});
             var server = net.createServer(function (socket) {

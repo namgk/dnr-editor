@@ -26,14 +26,14 @@ RED.utils = (function() {
     function buildMessageSummaryValue(value) {
         var result;
         if (Array.isArray(value)) {
-            result = $('<span class="debug-message-object-value debug-message-type-meta"></span>').html('array['+value.length+']');
+            result = $('<span class="debug-message-object-value debug-message-type-meta"></span>').text('array['+value.length+']');
         } else if (value === null) {
             result = $('<span class="debug-message-object-value debug-message-type-null">null</span>');
         } else if (typeof value === 'object') {
             if (value.hasOwnProperty('type') && value.type === 'Buffer' && value.hasOwnProperty('data')) {
-                result = $('<span class="debug-message-object-value debug-message-type-meta"></span>').html('buffer['+value.length+']');
+                result = $('<span class="debug-message-object-value debug-message-type-meta"></span>').text('buffer['+value.length+']');
             } else if (value.hasOwnProperty('type') && value.type === 'array' && value.hasOwnProperty('data')) {
-                result = $('<span class="debug-message-object-value debug-message-type-meta"></span>').html('array['+value.length+']');
+                result = $('<span class="debug-message-object-value debug-message-type-meta"></span>').text('array['+value.length+']');
             } else {
                 result = $('<span class="debug-message-object-value debug-message-type-meta">object</span>');
             }
@@ -50,24 +50,58 @@ RED.utils = (function() {
         }
         return result;
     }
-    function makeExpandable(el,onexpand,expand) {
+    function makeExpandable(el,onbuild,ontoggle,expand) {
         el.addClass("debug-message-expandable");
+        el.prop('toggle',function() {
+            return function(state) {
+                var parent = el.parent();
+                if (parent.hasClass('collapsed')) {
+                    if (state) {
+                        if (onbuild && !parent.hasClass('built')) {
+                            onbuild();
+                            parent.addClass('built');
+                        }
+                        parent.removeClass('collapsed');
+                        return true;
+                    }
+                } else {
+                    if (!state) {
+                        parent.addClass('collapsed');
+                        return true;
+                    }
+                }
+                return false;
+            }
+        });
         el.click(function(e) {
             var parent = $(this).parent();
-            if (parent.hasClass('collapsed')) {
-                if (onexpand && !parent.hasClass('built')) {
-                    onexpand();
-                    parent.addClass('built');
+            var currentState = !parent.hasClass('collapsed');
+            if ($(this).prop('toggle')(!currentState)) {
+                if (ontoggle) {
+                    ontoggle(!currentState);
                 }
-                parent.removeClass('collapsed');
-            } else {
-                parent.addClass('collapsed');
             }
+            // if (parent.hasClass('collapsed')) {
+            //     if (onbuild && !parent.hasClass('built')) {
+            //         onbuild();
+            //         parent.addClass('built');
+            //     }
+            //     if (ontoggle) {
+            //         ontoggle(true);
+            //     }
+            //     parent.removeClass('collapsed');
+            // } else {
+            //     parent.addClass('collapsed');
+            //     if (ontoggle) {
+            //         ontoggle(false);
+            //     }
+            // }
             e.preventDefault();
         });
         if (expand) {
             el.click();
         }
+
     }
 
     var pinnedPaths = {};
@@ -137,7 +171,7 @@ RED.utils = (function() {
     }
 
     function formatNumber(element,obj,sourceId,path,cycle,initialFormat) {
-        var format = (formattedPaths[sourceId] && formattedPaths[sourceId][path]) || initialFormat || "dec";
+        var format = (formattedPaths[sourceId] && formattedPaths[sourceId][path] && formattedPaths[sourceId][path]['number']) || initialFormat || "dec";
         if (cycle) {
             if (format === 'dec') {
                 if ((obj.toString().length===13) && (obj<=2147483647000)) {
@@ -153,10 +187,12 @@ RED.utils = (function() {
                 format = 'dec';
             }
             formattedPaths[sourceId] = formattedPaths[sourceId]||{};
-            formattedPaths[sourceId][path] = format;
+            formattedPaths[sourceId][path] = formattedPaths[sourceId][path]||{};
+            formattedPaths[sourceId][path]['number'] = format;
         } else if (initialFormat !== undefined){
             formattedPaths[sourceId] = formattedPaths[sourceId]||{};
-            formattedPaths[sourceId][path] = format;
+            formattedPaths[sourceId][path] = formattedPaths[sourceId][path]||{};
+            formattedPaths[sourceId][path]['number'] = format;
         }
         if (format === 'dec') {
             element.text(""+obj);
@@ -170,7 +206,7 @@ RED.utils = (function() {
     }
 
     function formatBuffer(element,button,sourceId,path,cycle) {
-        var format = (formattedPaths[sourceId] && formattedPaths[sourceId][path]) || "raw";
+        var format = (formattedPaths[sourceId] && formattedPaths[sourceId][path] && formattedPaths[sourceId][path]['buffer']) || "raw";
         if (cycle) {
             if (format === 'raw') {
                 format = 'string';
@@ -178,7 +214,8 @@ RED.utils = (function() {
                 format = 'raw';
             }
             formattedPaths[sourceId] = formattedPaths[sourceId]||{};
-            formattedPaths[sourceId][path] = format;
+            formattedPaths[sourceId][path] = formattedPaths[sourceId][path]||{};
+            formattedPaths[sourceId][path]['buffer'] = format;
         }
         if (format === 'raw') {
             button.text('raw');
@@ -189,10 +226,23 @@ RED.utils = (function() {
         }
     }
 
-    function buildMessageElement(obj,key,typeHint,hideKey,path,sourceId,rootPath,expandPaths) {
+    function buildMessageElement(obj,options) {
+        options = options || {};
+        var key = options.key;
+        var typeHint = options.typeHint;
+        var hideKey = options.hideKey;
+        var path = options.path;
+        var sourceId = options.sourceId;
+        var rootPath = options.rootPath;
+        var expandPaths = options.expandPaths;
+        var ontoggle = options.ontoggle;
+        var exposeApi = options.exposeApi;
+
+        var subElements = {};
         var i;
         var e;
         var entryObj;
+        var expandableHeader;
         var header;
         var headerHead;
         var value;
@@ -254,10 +304,10 @@ RED.utils = (function() {
                 element.addClass('collapsed');
                 $('<i class="fa fa-caret-right debug-message-object-handle"></i> ').prependTo(header);
                 makeExpandable(header, function() {
-                    $('<span class="debug-message-type-meta debug-message-object-type-header"></span>').html(typeHint||'string').appendTo(header);
+                    $('<span class="debug-message-type-meta debug-message-object-type-header"></span>').text(typeHint||'string').appendTo(header);
                     var row = $('<div class="debug-message-object-entry collapsed"></div>').appendTo(element);
                     $('<pre class="debug-message-type-string"></pre>').text(obj).appendTo(row);
-                },checkExpanded(strippedKey,expandPaths));
+                },function(state) {if (ontoggle) { ontoggle(path,state);}}, checkExpanded(strippedKey,expandPaths));
             }
             e = $('<span class="debug-message-type-string debug-message-object-header"></span>').html('"'+formatString(sanitize(obj))+'"').appendTo(entryObj);
             if (/^#[0-9a-f]{6}$/i.test(obj)) {
@@ -308,7 +358,7 @@ RED.utils = (function() {
                 element.addClass('debug-message-buffer-raw');
             }
             if (key) {
-                headerHead = $('<span class="debug-message-type-meta"></span>').html(typeHint||(type+'['+originalLength+']')).appendTo(entryObj);
+                headerHead = $('<span class="debug-message-type-meta"></span>').text(typeHint||(type+'['+originalLength+']')).appendTo(entryObj);
             } else {
                 headerHead = $('<span class="debug-message-object-header"></span>').appendTo(entryObj);
                 $('<span>[ </span>').appendTo(headerHead);
@@ -331,7 +381,7 @@ RED.utils = (function() {
 
                 makeExpandable(header,function() {
                     if (!key) {
-                        headerHead = $('<span class="debug-message-type-meta debug-message-object-type-header"></span>').html(typeHint||(type+'['+originalLength+']')).appendTo(header);
+                        headerHead = $('<span class="debug-message-type-meta debug-message-object-type-header"></span>').text(typeHint||(type+'['+originalLength+']')).appendTo(header);
                     }
                     if (type === 'buffer') {
                         var stringRow = $('<div class="debug-message-string-rows"></div>').appendTo(element);
@@ -344,7 +394,7 @@ RED.utils = (function() {
                         }
                         $('<pre class="debug-message-type-string"></pre>').text(stringEncoding).appendTo(sr);
                         var bufferOpts = $('<span class="debug-message-buffer-opts"></span>').appendTo(headerHead);
-                        var switchFormat = $('<a href="#"></a>').addClass('selected').html('raw').appendTo(bufferOpts).click(function(e) {
+                        var switchFormat = $('<a href="#"></a>').addClass('selected').text('raw').appendTo(bufferOpts).click(function(e) {
                             e.preventDefault();
                             e.stopPropagation();
                             formatBuffer(element,$(this),sourceId,path,true);
@@ -356,7 +406,20 @@ RED.utils = (function() {
                     if (fullLength <= 10) {
                         for (i=0;i<fullLength;i++) {
                             row = $('<div class="debug-message-object-entry collapsed"></div>').appendTo(arrayRows);
-                            buildMessageElement(data[i],""+i,type==='buffer'?'hex':false,false,path+"["+i+"]",sourceId,rootPath,expandPaths).appendTo(row);
+                            subElements[path+"["+i+"]"] = buildMessageElement(
+                                data[i],
+                                {
+                                    key: ""+i,
+                                    typeHint: type==='buffer'?'hex':false,
+                                    hideKey: false,
+                                    path: path+"["+i+"]",
+                                    sourceId: sourceId,
+                                    rootPath: rootPath,
+                                    expandPaths: expandPaths,
+                                    ontoggle: ontoggle,
+                                    exposeApi: exposeApi
+                                }
+                            ).appendTo(row);
                         }
                     } else {
                         for (i=0;i<fullLength;i+=10) {
@@ -371,17 +434,35 @@ RED.utils = (function() {
                                 return function() {
                                     for (var i=min;i<=max;i++) {
                                         var row = $('<div class="debug-message-object-entry collapsed"></div>').appendTo(parent);
-                                        buildMessageElement(data[i],""+i,type==='buffer'?'hex':false,false,path+"["+i+"]",sourceId,rootPath,expandPaths).appendTo(row);
+                                        subElements[path+"["+i+"]"] = buildMessageElement(
+                                            data[i],
+                                            {
+                                                key: ""+i,
+                                                typeHint: type==='buffer'?'hex':false,
+                                                hideKey: false,
+                                                path: path+"["+i+"]",
+                                                sourceId: sourceId,
+                                                rootPath: rootPath,
+                                                expandPaths: expandPaths,
+                                                ontoggle: ontoggle,
+                                                exposeApi: exposeApi
+
+                                            }
+                                        ).appendTo(row);
                                     }
                                 }
-                            })(),checkExpanded(strippedKey,expandPaths,minRange,Math.min(fullLength-1,(minRange+9))));
+                            })(),
+                            (function() { var path = path+"["+i+"]"; return function(state) {if (ontoggle) { ontoggle(path,state);}}})(),
+                            checkExpanded(strippedKey,expandPaths,minRange,Math.min(fullLength-1,(minRange+9))));
                             $('<span class="debug-message-object-key"></span>').html("["+minRange+" &hellip; "+Math.min(fullLength-1,(minRange+9))+"]").appendTo(header);
                         }
                         if (fullLength < originalLength) {
                              $('<div class="debug-message-object-entry collapsed"><span class="debug-message-object-key">['+fullLength+' &hellip; '+originalLength+']</span></div>').appendTo(arrayRows);
                         }
                     }
-                },checkExpanded(strippedKey,expandPaths));
+                },
+                function(state) {if (ontoggle) { ontoggle(path,state);}},
+                checkExpanded(strippedKey,expandPaths));
             }
         } else if (typeof obj === 'object') {
             element.addClass('collapsed');
@@ -390,25 +471,43 @@ RED.utils = (function() {
                 $('<i class="fa fa-caret-right debug-message-object-handle"></i> ').prependTo(header);
                 makeExpandable(header, function() {
                     if (!key) {
-                        $('<span class="debug-message-type-meta debug-message-object-type-header"></span>').html('object').appendTo(header);
+                        $('<span class="debug-message-type-meta debug-message-object-type-header"></span>').text('object').appendTo(header);
                     }
                     for (i=0;i<keys.length;i++) {
                         var row = $('<div class="debug-message-object-entry collapsed"></div>').appendTo(element);
                         var newPath = path;
-                        if (/^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(keys[i])) {
-                            newPath += (newPath.length > 0?".":"")+keys[i];
-                        } else {
-                            newPath += "[\""+keys[i].replace(/"/,"\\\"")+"\"]"
+                        if (newPath !== undefined) {
+                            if (/^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(keys[i])) {
+                                newPath += (newPath.length > 0?".":"")+keys[i];
+                            } else {
+                                newPath += "[\""+keys[i].replace(/"/,"\\\"")+"\"]"
+                            }
                         }
-                        buildMessageElement(obj[keys[i]],keys[i],false,false,newPath,sourceId,rootPath,expandPaths).appendTo(row);
+                        subElements[newPath] = buildMessageElement(
+                            obj[keys[i]],
+                            {
+                                key: keys[i],
+                                typeHint: false,
+                                hideKey: false,
+                                path: newPath,
+                                sourceId: sourceId,
+                                rootPath: rootPath,
+                                expandPaths: expandPaths,
+                                ontoggle: ontoggle,
+                                exposeApi: exposeApi
+
+                            }
+                        ).appendTo(row);
                     }
                     if (keys.length === 0) {
                         $('<div class="debug-message-object-entry debug-message-type-meta collapsed"></div>').text("empty").appendTo(element);
                     }
-                },checkExpanded(strippedKey,expandPaths));
+                },
+                function(state) {if (ontoggle) { ontoggle(path,state);}},
+                checkExpanded(strippedKey,expandPaths));
             }
             if (key) {
-                $('<span class="debug-message-type-meta"></span>').html('object').appendTo(entryObj);
+                $('<span class="debug-message-type-meta"></span>').text('object').appendTo(entryObj);
             } else {
                 headerHead = $('<span class="debug-message-object-header"></span>').appendTo(entryObj);
                 $('<span>{ </span>').appendTo(headerHead);
@@ -431,6 +530,28 @@ RED.utils = (function() {
             }
         } else {
             $('<span class="debug-message-type-other"></span>').text(""+obj).appendTo(entryObj);
+        }
+        if (exposeApi) {
+            element.prop('expand', function() { return function(targetPath, state) {
+                if (path === targetPath) {
+                    if (header.prop('toggle')) {
+                        header.prop('toggle')(state);
+                    }
+                } else if (subElements[targetPath] && subElements[targetPath].prop('expand') ) {
+                    subElements[targetPath].prop('expand')(targetPath,state);
+                } else {
+                    for (var p in subElements) {
+                        if (subElements.hasOwnProperty(p)) {
+                            if (targetPath.indexOf(p) === 0) {
+                                if (subElements[p].prop('expand') ) {
+                                    subElements[p].prop('expand')(targetPath,state);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            }});
         }
         return element;
     }
@@ -571,16 +692,25 @@ RED.utils = (function() {
         return result;
     }
 
-    function getNodeIcon(def,node) {
-        if (def.category === 'config') {
-            return "icons/node-red/cog.png"
-        } else if (node && node.type === 'tab') {
-            return "icons/node-red/subflow.png"
-        } else if (node && node.type === 'unknown') {
-            return "icons/node-red/alert.png"
+    function separateIconPath(icon) {
+        var result = {module: "", file: ""};
+        if (icon) {
+            var index = icon.indexOf('/');
+            if (index !== -1) {
+                result.module = icon.slice(0, index);
+                result.file = icon.slice(index + 1);
+            } else {
+                result.file = icon;
+            }
         }
+        return result;
+    }
+
+    function getDefaultNodeIcon(def,node) {
         var icon_url;
-        if (typeof def.icon === "function") {
+        if (node && node.type === "subflow") {
+            icon_url = "node-red/subflow.png";
+        } else if (typeof def.icon === "function") {
             try {
                 icon_url = def.icon.call(node);
             } catch(err) {
@@ -590,7 +720,50 @@ RED.utils = (function() {
         } else {
             icon_url = def.icon;
         }
-        return "icons/"+def.set.module+"/"+icon_url;
+
+        var iconPath = separateIconPath(icon_url);
+        if (!iconPath.module) {
+            if (def.set) {
+                iconPath.module = def.set.module;
+            } else {
+                // Handle subflow instance nodes that don't have def.set
+                iconPath.module = "node-red";
+            }
+        }
+        return iconPath;
+    }
+
+    function isIconExists(iconPath) {
+        var iconSets = RED.nodes.getIconSets();
+        var iconFileList = iconSets[iconPath.module];
+        if (iconFileList && iconFileList.indexOf(iconPath.file) !== -1) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function getNodeIcon(def,node) {
+        if (def.category === 'config') {
+            return "icons/node-red/cog.png"
+        } else if (node && node.type === 'tab') {
+            return "icons/node-red/subflow.png"
+        } else if (node && node.type === 'unknown') {
+            return "icons/node-red/alert.png"
+        } else if (node && node.icon) {
+            var iconPath = separateIconPath(node.icon);
+            if (isIconExists(iconPath)) {
+                return "icons/" + node.icon;
+            }
+        }
+
+        var iconPath = getDefaultNodeIcon(def, node);
+        if (def.category === 'subflows') {
+            if (!isIconExists(iconPath)) {
+                return "icons/node-red/subflow.png";
+            }
+        }
+        return "icons/"+iconPath.module+"/"+iconPath.file;
     }
 
     function getNodeLabel(node,defaultLabel) {
@@ -610,12 +783,23 @@ RED.utils = (function() {
         return RED.text.bidi.enforceTextDirectionWithUCC(l);
     }
 
+    function addSpinnerOverlay(container,contain) {
+        var spinner = $('<div class="projects-dialog-spinner "><img src="red/images/spin.svg"/></div>').appendTo(container);
+        if (contain) {
+            spinner.addClass('projects-dialog-spinner-contain');
+        }
+        return spinner;
+    }
+
     return {
         createObjectElement: buildMessageElement,
         getMessageProperty: getMessageProperty,
         normalisePropertyExpression: normalisePropertyExpression,
         validatePropertyExpression: validatePropertyExpression,
+        separateIconPath: separateIconPath,
+        getDefaultNodeIcon: getDefaultNodeIcon,
         getNodeIcon: getNodeIcon,
         getNodeLabel: getNodeLabel,
+        addSpinnerOverlay: addSpinnerOverlay
     }
 })();

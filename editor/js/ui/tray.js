@@ -32,7 +32,15 @@ RED.tray = (function() {
         // var growButton = $('<a class="editor-tray-resize-button" style="cursor: w-resize;"><i class="fa fa-angle-left"></i></a>').appendTo(resizer);
         // var shrinkButton = $('<a class="editor-tray-resize-button" style="cursor: e-resize;"><i style="margin-left: 1px;" class="fa fa-angle-right"></i></a>').appendTo(resizer);
         if (options.title) {
-            $('<div class="editor-tray-titlebar">'+options.title+'</div>').appendTo(header);
+            var titles = stack.map(function(e) { return e.options.title });
+            titles.push(options.title);
+            var title = '<ul class="editor-tray-breadcrumbs"><li>'+titles.join("</li><li>")+'</li></ul>';
+
+            $('<div class="editor-tray-titlebar">'+title+'</div>').appendTo(header);
+        }
+        if (options.width === Infinity) {
+            options.maximized = true;
+            resizer.addClass('editor-tray-resize-maximised');
         }
         var buttonBar = $('<div class="editor-tray-toolbar"></div>').appendTo(header);
         var primaryButton;
@@ -44,7 +52,7 @@ RED.tray = (function() {
                     b.attr('id',button.id);
                 }
                 if (button.text) {
-                    b.html(button.text);
+                    b.text(button.text);
                 }
                 if (button.click) {
                     b.click((function(action) {
@@ -74,7 +82,8 @@ RED.tray = (function() {
         };
         stack.push(tray);
 
-        el.draggable({
+        if (!options.maximized) {
+            el.draggable({
                 handle: resizer,
                 axis: "x",
                 start:function(event,ui) {
@@ -103,16 +112,17 @@ RED.tray = (function() {
                     tray.width = -ui.position.left;
                 }
             });
+        }
 
         function finishBuild() {
             $("#header-shade").show();
             $("#editor-shade").show();
             $("#palette-shade").show();
             $(".sidebar-shade").show();
-
             tray.preferredWidth = Math.max(el.width(),500);
-            body.css({"minWidth":tray.preferredWidth-40});
-
+            if (!options.maximized) {
+                body.css({"minWidth":tray.preferredWidth-40});
+            }
             if (options.width) {
                 if (options.width > $("#editor-stack").position().left-8) {
                     options.width = $("#editor-stack").position().left-8;
@@ -175,7 +185,7 @@ RED.tray = (function() {
             var tray = stack[stack.length-1];
             var trayHeight = tray.tray.height()-tray.header.outerHeight()-tray.footer.outerHeight();
             tray.body.height(trayHeight);
-            if (tray.width > $("#editor-stack").position().left-8) {
+            if (tray.options.maximized || tray.width > $("#editor-stack").position().left-8) {
                 tray.width = $("#editor-stack").position().left-8;
                 tray.tray.width(tray.width);
                 // tray.body.parent().width(tray.width);
@@ -204,8 +214,11 @@ RED.tray = (function() {
             });
         },
         show: function show(options) {
-            if (stack.length > 0) {
+            if (stack.length > 0 && !options.overlay) {
                 var oldTray = stack[stack.length-1];
+                if (options.width === "inherit") {
+                    options.width = oldTray.tray.width();
+                }
                 oldTray.tray.css({
                     right: -(oldTray.tray.width()+10)+"px"
                 });
@@ -232,14 +245,21 @@ RED.tray = (function() {
                     tray.tray.remove();
                     if (stack.length > 0) {
                         var oldTray = stack[stack.length-1];
-                        oldTray.tray.appendTo("#editor-stack");
-                        setTimeout(function() {
+                        if (!oldTray.options.overlay) {
+                            oldTray.tray.appendTo("#editor-stack");
+                            setTimeout(function() {
+                                handleWindowResize();
+                                oldTray.tray.css({right:0});
+                                if (oldTray.options.show) {
+                                    oldTray.options.show();
+                                }
+                            },0);
+                        } else {
                             handleWindowResize();
-                            oldTray.tray.css({right:0});
                             if (oldTray.options.show) {
                                 oldTray.options.show();
                             }
-                        },0);
+                        }
                     }
                     if (done) {
                         done();

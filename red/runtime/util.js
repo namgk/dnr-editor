@@ -338,8 +338,9 @@ function prepareJSONataExpression(value,node) {
         return node.context().flow.get(val);
     });
     expr.assign('globalContext',function(val) {
-        return node.context().global(val);
+        return node.context().global.get(val);
     });
+    expr.registerFunction('clone', cloneMessage, '<(oa)-:o>');
     expr._legacyMode = /(^|[^a-zA-Z0-9_'"])msg([^a-zA-Z0-9_'"]|$)/.test(value);
     return expr;
 }

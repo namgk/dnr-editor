@@ -84,7 +84,7 @@ function createNodeApi(node) {
         red.auth = runtime.adminApi.auth;
         red.httpAdmin = runtime.adminApi.adminApp;
         red.httpNode = runtime.nodeApp;
-        red.server = runtime.adminApi.server;
+        red.server = runtime.server;
     } else {
         //TODO: runtime.adminApi is always stubbed if not enabled, so this block
         // is unused - but may be needed for the unit tests
@@ -158,10 +158,12 @@ function loadNodeFiles(nodeFiles) {
         }
     }
     return when.settle(promises).then(function(results) {
+        // all unloaded
         var nodes = results.map(function(r) {
             registry.addNodeSet(r.value.id,r.value,r.value.version);
             return r.value;
         });
+        // console.log(nodes)
         return loadNodeSetList(nodes);
     });
 }
@@ -214,15 +216,15 @@ function loadNodeConfig(fileInfo) {
             } else {
                 var types = [];
 
-                var regExp = /<script ([^>]*)data-template-name=['"]([^'"]*)['"]/gi;
+                var regExp = /<script (?:[^>]*)data-template-name\s*=\s*['"]([^'"]*)['"]/gi;
                 var match = null;
 
                 while ((match = regExp.exec(content)) !== null) {
-                    types.push(match[2]);
+                    types.push(match[1]);
                 }
                 node.types = types;
 
-                var langRegExp = /^<script[^>]* data-lang=['"](.+?)['"]/i;
+                var langRegExp = /^<script[^>]* data-lang\s*=\s*['"](.+?)['"]/i;
                 regExp = /(<script[^>]* data-help-name=[\s\S]*?<\/script>)/gi;
                 match = null;
                 var mainContent = "";
@@ -254,6 +256,12 @@ function loadNodeConfig(fileInfo) {
                         node.err = node.types[i]+" already registered";
                         break;
                     }
+                }
+                if (node.module === 'node-red') {
+                    // do not look up locales directory for core nodes
+                    node.namespace = node.module;
+                    resolve(node);
+                    return;
                 }
                 fs.stat(path.join(path.dirname(file),"locales"),function(err,stat) {
                     if (!err) {
@@ -291,7 +299,34 @@ function loadNodeSet(node) {
     }
     try {
         var loadPromise = null;
-        var r = require(node.file);
+        // DNR: if node requires any specific libraries, this will fail
+
+        var nodeJsFile = fs.readFileSync(node.file, 'utf8')
+        // extracting module.exports = function(RED){...}
+        var nodeFuncIdx = nodeJsFile.indexOf("function(RED)")
+        var nodeFuncStr = nodeJsFile.substring(nodeFuncIdx, nodeJsFile.length)
+        
+        if (nodeFuncStr.length > 0){
+            var red = createNodeApi(node);
+            var nodeTypes = require('../../dnr').extractNodeTypes(nodeFuncStr)
+
+            for (var type of nodeTypes){
+                red.nodes.registerType(type,function(n){red.nodes.createNode(this,n);})
+            }
+        }
+
+        node.enabled = true;
+        node.loaded = true;
+        loadPromise = when.resolve(node);
+
+        return loadPromise;
+        // DNR ends
+
+        try {
+            var r = require(node.file);
+        } catch (e){
+            console.log(e)
+        }
         if (typeof r === "function") {
 
             var red = createNodeApi(node);
@@ -316,13 +351,13 @@ function loadNodeSet(node) {
             } else {
                 promise = r(red); 
             }
-            
+
             if (promise != null && typeof promise.then === "function") {
                 loadPromise = promise.then(function() {
                     node.enabled = true;
                     node.loaded = true;
                     return node;
-                }).otherwise(function(err) {
+                }).catch(function(err) {
                     node.err = err;
                     return node;
                 });
@@ -391,9 +426,18 @@ function addModule(module) {
 }
 
 function loadNodeHelp(node,lang) {
-    var dir = path.dirname(node.template);
     var base = path.basename(node.template);
-    var localePath = path.join(dir,"locales",lang,base);
+    var localePath = undefined;
+    if (node.module === 'node-red') {
+        var cat_dir = path.dirname(node.template);
+        var cat = path.basename(cat_dir);
+        var dir = path.dirname(cat_dir);
+        localePath = path.join(dir, "locales", lang, cat, base)
+    }
+    else {
+        var dir = path.dirname(node.template);
+        localePath = path.join(dir,"locales",lang,base);
+    }
     try {
         // TODO: make this async
         var content = fs.readFileSync(localePath, "utf8")

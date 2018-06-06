@@ -71,13 +71,21 @@ module.exports = {
             api.init(httpServer,runtime);
             dnr.init(httpServer,runtime);
             apiEnabled = true;
+            server = runtime.adminApi.server;
+            runtime.server = runtime.adminApi.server;
         } else {
             runtime.init(userSettings);
             apiEnabled = false;
+            if (httpServer){
+                server = httpServer;
+                runtime.server = httpServer;
+            } else {
+                server = runtime.adminApi.server;
+                runtime.server = runtime.adminApi.server; // useless at this point, but at least harmless.
+            }
         }
         adminApp = runtime.adminApi.adminApp;
         nodeApp = runtime.nodeApp;
-        server = runtime.adminApi.server;
         return;
     },
     start: function() {
@@ -100,6 +108,7 @@ module.exports = {
     settings:runtime.settings,
     util: runtime.util,
     version: runtime.version,
+    events: runtime.events,
 
     comms: api.comms,
     library: api.library,

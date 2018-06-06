@@ -29,6 +29,7 @@ RED.debug = (function() {
     var messagesByNode = {};
     var sbc;
     var activeWorkspace;
+    var numMessages = 100;  // Hardcoded number of message to show in debug window scrollback
 
     var filterVisible = false;
 
@@ -41,14 +42,14 @@ RED.debug = (function() {
         var content = $("<div>").css({"position":"relative","height":"100%"});
         var toolbar = $('<div class="sidebar-header">'+
             '<span class="button-group"><a id="debug-tab-filter" class="sidebar-header-button" href="#"><i class="fa fa-filter"></i> <span></span></a></span>'+
-            '<span class="button-group"><a id="debug-tab-clear" title="clear log" class="sidebar-header-button" href="#"><i class="fa fa-trash"></i></a></span></div>').appendTo(content);
+            '<span class="button-group"><a id="debug-tab-clear" class="sidebar-header-button" href="#" data-i18n="[title]node-red:debug.sidebar.clearLog"><i class="fa fa-trash"></i></a></span></div>').appendTo(content);
 
         var footerToolbar = $('<div>'+
             // '<span class="button-group">'+
             //     '<a class="sidebar-footer-button-toggle text-button selected" id="debug-tab-view-list" href="#"><span data-i18n="">list</span></a>'+
             //     '<a class="sidebar-footer-button-toggle text-button" id="debug-tab-view-table" href="#"><span data-i18n="">table</span></a> '+
             // '</span>'+
-            '<span class="button-group"><a id="debug-tab-open" title="open in new window" class="sidebar-footer-button" href="#"><i class="fa fa-desktop"></i></a></span> ' +
+            '<span class="button-group"><a id="debug-tab-open" class="sidebar-footer-button" href="#" data-i18n="[title]node-red:debug.sidebar.openWindow"><i class="fa fa-desktop"></i></a></span> ' +
             '</div>');
 
         messageList = $('<div class="debug-content debug-content-list"/>').appendTo(content);
@@ -68,9 +69,9 @@ RED.debug = (function() {
         // var filterTypeRow = $('<div class="debug-filter-row"></div>').appendTo(filterDialog);
         // $('<select><option>Show all debug nodes</option><option>Show selected debug nodes</option><option>Show current flow only</option></select>').appendTo(filterTypeRow);
 
-        var debugNodeListRow = $('<div class="debug-filter-row hide"></div>').appendTo(filterDialog);
+        var debugNodeListRow = $('<div class="debug-filter-row hide" id="debug-filter-node-list-row"></div>').appendTo(filterDialog);
         var flowCheckboxes = {};
-        var debugNodeListHeader = $('<div><span>Debug nodes</span><span></span></div>');
+        var debugNodeListHeader = $('<div><span data-i18n="node-red:debug.sidebar.debugNodes"></span><span></span></div>');
         var headerCheckbox = $('<input type="checkbox">').appendTo(debugNodeListHeader.find("span")[1]).checkboxSet();
 
         debugNodeList = $('<ol>',{style:"text-align: left; min-height: 250px; max-height: 250px"}).appendTo(debugNodeListRow).editableList({
@@ -218,11 +219,8 @@ RED.debug = (function() {
 
         toolbar.find("#debug-tab-clear").click(function(e) {
             e.preventDefault();
-            $(".debug-message").remove();
-            messageCount = 0;
-            config.clear();
+            clearMessageList(false);
         });
-
 
         return {
             content: content,
@@ -239,6 +237,9 @@ RED.debug = (function() {
         workspaceOrder.forEach(function(ws,i) {
             workspaceOrderMap[ws] = i;
         });
+        candidateNodes = candidateNodes.filter(function(node) {
+            return workspaceOrderMap.hasOwnProperty(node.z);
+        })
         candidateNodes.sort(function(A,B) {
             var wsA = workspaceOrderMap[A.z];
             var wsB = workspaceOrderMap[B.z];
@@ -340,7 +341,7 @@ RED.debug = (function() {
                         activeMenuMessage.clearPinned();
                     }},
                     null,
-                    {id:"debug-message-menu-item-filter",label:RED._("node-red:debug.messageMenu.filterNode"),onselect:function(){
+                    {id:"debug-message-menu-item-filter", label:RED._("node-red:debug.messageMenu.filterNode"),onselect:function(){
                         var candidateNodes = RED.nodes.filterNodes({type:'debug'});
                         candidateNodes.forEach(function(n) {
                             filteredNodes[n.id] = true;
@@ -362,6 +363,15 @@ RED.debug = (function() {
             menuOptionMenu.on('mouseup', function() { $(this).hide() });
             menuOptionMenu.appendTo("body");
         }
+
+        var filterOptionDisabled = false;
+        var sourceNode = RED.nodes.node(sourceId);
+        if (sourceNode && sourceNode.type !== 'debug') {
+            filterOptionDisabled = true;
+        }
+        RED.menu.setDisabled('debug-message-menu-item-filter',filterOptionDisabled);
+        RED.menu.setDisabled('debug-message-menu-item-clear-filter',filterOptionDisabled);
+
         var elementPos = button.offset();
         menuOptionMenu.css({
             top: elementPos.top+"px",
@@ -369,21 +379,43 @@ RED.debug = (function() {
         })
         menuOptionMenu.show();
     }
-    function handleDebugMessage(o) {
-        var msg = document.createElement("div");
 
+    var stack = [];
+    var busy = false;
+    function handleDebugMessage(o) {
+        if (o) { stack.push(o); }
+        if (!busy && (stack.length > 0)) {
+            busy = true;
+            processDebugMessage(stack.shift());
+            setTimeout(function() {
+                busy = false;
+                handleDebugMessage();
+            }, 15);  // every 15mS = 66 times a second
+            if (stack.length > numMessages) { stack = stack.splice(-numMessages); }
+        }
+    }
+
+    function processDebugMessage(o) {
+        var msg = document.createElement("div");
         var sourceNode = o._source;
 
         msg.onmouseenter = function() {
             $(msg).addClass('debug-message-hover');
             if (o._source) {
                 config.messageMouseEnter(o._source.id);
+                if (o._source._alias) {
+                    config.messageMouseEnter(o._source._alias);
+                }
             }
+
         };
         msg.onmouseleave = function() {
             $(msg).removeClass('debug-message-hover');
             if (o._source) {
                 config.messageMouseLeave(o._source.id);
+                if (o._source._alias) {
+                    config.messageMouseLeave(o._source._alias);
+                }
             }
         };
         var name = sanitize(((o.name?o.name:o.id)||"").toString());
@@ -423,7 +455,9 @@ RED.debug = (function() {
             $('<span class="debug-message-name">'+name+'</span>').appendTo(metaRow);
         }
 
-        if (format === 'Object' || /^array/.test(format) || format === 'boolean' || format === 'number' ) {
+        if ((format === 'number') && (payload === "NaN")) {
+            payload = Number.NaN;
+        } else if (format === 'Object' || /^array/.test(format) || format === 'boolean' || format === 'number' ) {
             payload = JSON.parse(payload);
         } else if (/error/i.test(format)) {
             payload = JSON.parse(payload);
@@ -441,7 +475,14 @@ RED.debug = (function() {
         }
         var el = $('<span class="debug-message-payload"></span>').appendTo(msg);
         var path = o.property||'';
-        var debugMessage = RED.utils.createObjectElement(payload,/*true*/null,format,false,path,sourceNode&&sourceNode.id,path);
+        var debugMessage = RED.utils.createObjectElement(payload, {
+            key: /*true*/null,
+            typeHint: format,
+            hideKey: false,
+            path: path,
+            sourceId: sourceNode&&sourceNode.id,
+            rootPath: path
+        });
         // Do this in a separate step so the element functions aren't stripped
         debugMessage.appendTo(el);
         // NOTE: relying on function error to have a "type" that all other msgs don't
@@ -490,7 +531,7 @@ RED.debug = (function() {
             }
         }
 
-        if (messages.length === 100) {
+        if (messages.length === numMessages) {
             m = messages.shift();
             if (view === "list") {
                 m.el.remove();
@@ -501,10 +542,28 @@ RED.debug = (function() {
         }
     }
 
+    function clearMessageList(clearFilter) {
+        $(".debug-message").remove();
+        config.clear();
+        if (!!clearFilter) {
+            clearFilterSettings();
+        }
+        refreshDebugNodeList();
+    }
+
+    function clearFilterSettings() {
+        filteredNodes = {};
+        filterType = 'filterAll';
+        $('.debug-tab-filter-option').removeClass('selected');
+        $('#debug-tab-filterAll').addClass('selected');
+        $('#debug-tab-filter span').text(RED._('node-red:debug.sidebar.filterAll'));
+        $('#debug-filter-node-list-row').slideUp();
+    }
+
     return {
         init: init,
         refreshMessageList:refreshMessageList,
         handleDebugMessage: handleDebugMessage,
-
+        clearMessageList: clearMessageList
     }
 })();
