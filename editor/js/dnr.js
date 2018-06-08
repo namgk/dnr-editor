@@ -951,7 +951,7 @@ RED.sidebar.devices = (function() {
 
       if (topic === 'devices/heartbeat'){
         var ctx = JSON.stringify(device.context)
-        devices[device.id].context = device.context
+        devices[device.id].cpus = device.context.cpus
         devices[device.id].freeMem = device.context.freeMem
         devices[device.id].cpuFree = device.context.cpuFree*100
         devices[device.id].lastSeen = device.lastSeen
@@ -976,9 +976,9 @@ RED.sidebar.devices = (function() {
         name: device.name,
         lastSeen: Date.now(),
         status: 'connected',
-        cpus: device.context.cpus,
-        cpuFree: device.context.cpuFree*100,
-        freeMem: device.context.freeMem
+        cpus: device.context ? device.context.cpus : 0,
+        cpuFree: device.context ? device.context.cpuFree*100 : 0,
+        freeMem: device.context ? device.context.freeMem : 0
       }
       devicesList.editableList('addItem', devices[device.id]);
     } else {
