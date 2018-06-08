@@ -218,9 +218,10 @@ function processDnrSyncRequest(dnrSyncReq){
 
     } else if (linkState === dnrInterface.Context.RECEIVE_REDIRECT || linkState === dnrInterface.Context.RECEIVE_REDIRECT_COPY){
       // find one device that host destId
-      let hightestLinkScoreDevId = findLinkScoreBasedDeviceForNode(destId, 1)
-      let mostFreeDevId = hightestLinkScoreDevId // testing with link score! before: findDeviceForNode(destId)
-      
+      // let hightestLinkScoreDevId = findLinkScoreBasedDeviceForNode(destId, 1)
+      // let mostFreeDevId = hightestLinkScoreDevId // testing with link score! before: findDeviceForNode(destId)
+      let mostFreeDevId = findDeviceForNode(destId)
+
       if (!mostFreeDevId){
         continue
       }
@@ -350,6 +351,7 @@ function start(){
     });
 
     ws.on('message', function(data,flags) {
+      console.log(data)
       if (ws.readyState != 1){
         return
       }
