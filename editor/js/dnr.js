@@ -357,16 +357,18 @@ RED.dnr = (function() {
     var operatorUrl = protocol + "//" + host + (port ? (":"+port) : "")
     var dnrSeed = [
       {
-        "id": "af25fe8d.debf5",
+        "id": "xxxxxxxx.xxxxx",
         "type": "tab",
         "label": "DNR Seed"
       },
       {
-        "id":"f14195aa.25e298",
+        "id":"xxxxxxxx.xxxxx",
         "operatorUrl": operatorUrl,
+        "nodered":"",
+        "wires":[],
         "type": "dnr-daemon",
         "x":100,"y":100,
-        "z": "af25fe8d.debf5"
+        "z": "xxxxxxxx.xxxxx"
       }
     ]
     $("#seed-export").val(JSON.stringify(dnrSeed))
