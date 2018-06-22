@@ -64,6 +64,9 @@ RED.dnr = (function() {
         if (c['memory']){
           $( "#memory-constraint" ).val(c['memory'])
         }
+        if (c['rxload']){
+          $( "#rxload-constraint" ).val(c['rxload'])
+        }
         if (c['cores']){
           $( "#cores-constraint" ).val(c['cores'])
         }
@@ -204,6 +207,8 @@ RED.dnr = (function() {
           <input type="text" id="location-constraint">\
           <label for="memory-constraint"><i class="fa"></i>Min memory (MB):</label>\
           <input type="text" id="memory-constraint" placeholder="500">\
+          <label for="rxload-constraint"><i class="fa"></i>Max rxload (bytes/s):</label>\
+          <input type="text" id="rxload-constraint" placeholder="50000">\
           <label for="cores-constraint"><i class="fa"></i>Min CPU cores:</label>\
           <input type="text" id="cores-constraint" placeholder="1000">\
           <label for="force-install">Force install</label>\
@@ -346,6 +351,7 @@ RED.dnr = (function() {
     $("#device-name").val("")
     $("#location-constraint").val("")
     $("#memory-constraint").val("")
+    $("#rxload-constraint").val("")
     $("#cores-constraint").val("")
   }
 
@@ -390,12 +396,20 @@ RED.dnr = (function() {
     var deviceName = $( "#device-name" ).val();
     var location = $( "#location-constraint" ).val();
     var memory = $( "#memory-constraint" ).val();
+    var rxload = $( "#rxload-constraint" ).val();
     var cores = $( "#cores-constraint" ).val();
     
     if (memory){
       memory = parseInt(memory)
       if (isNaN(memory)){
         alert('cores and memory are integer')
+        return
+      }
+    }
+    if (rxload){
+      rxload = parseInt(rxload)
+      if (isNaN(rxload)){
+        alert('network load are integer')
         return
       }
     }
@@ -417,6 +431,8 @@ RED.dnr = (function() {
         creatingConstraint['location'] = location;
     if (memory)
         creatingConstraint['memory'] = memory;
+    if (rxload)
+        creatingConstraint['rxload'] = rxload;
     if (cores)
         creatingConstraint['cores'] = cores;
 
