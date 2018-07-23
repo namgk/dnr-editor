@@ -967,9 +967,7 @@ RED.sidebar.devices = (function() {
 
       if (topic === 'devices/heartbeat'){
         var ctx = JSON.stringify(device.context)
-        devices[device.id].cpus = device.context.cpus
-        devices[device.id].freeMem = device.context.freeMem
-        devices[device.id].cpuFree = device.context.cpuFree*100
+        devices[device.id].context = device.context
         devices[device.id].lastSeen = device.lastSeen
         var lastSeenTime = new Date(device.lastSeen)
         devices[device.id].elements.lastSeenText.html(
@@ -977,8 +975,8 @@ RED.sidebar.devices = (function() {
           lastSeenTime.getMinutes() + ':' +
           lastSeenTime.getSeconds()
         )
-        devices[device.id].elements.memoryBar.css('width', devices[device.id].freeMem/4000000000 + '%')
-        devices[device.id].elements.cpuBar.css('width', devices[device.id].cpuFree + '%')
+        devices[device.id].elements.memoryBar.css('width', devices[device.id].context.freeMem/4000000000 + '%')
+        devices[device.id].elements.cpuBar.css('width', devices[device.id].context.cpuFree + '%')
         devices[device.id].elements.headerRow.attr("title", ctx)
         updateMap()
       }
@@ -992,9 +990,7 @@ RED.sidebar.devices = (function() {
         name: device.name,
         lastSeen: Date.now(),
         status: 'connected',
-        cpus: device.context ? device.context.cpus : 0,
-        cpuFree: device.context ? device.context.cpuFree*100 : 0,
-        freeMem: device.context ? device.context.freeMem : 0
+        context: device.context
       }
       devicesList.editableList('addItem', devices[device.id]);
     } else {
@@ -1015,6 +1011,8 @@ RED.sidebar.devices = (function() {
     }
 
     var latlngs = []
+
+    console.log(devices)
 
     for (var id in devices){
       if (!devices[id].context || 
