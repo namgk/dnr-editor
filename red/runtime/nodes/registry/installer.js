@@ -14,6 +14,7 @@
  * limitations under the License.
  **/
 
+var dnr = require('../../dnr');
 
 var path = require("path");
 var fs = require("fs");
@@ -99,6 +100,23 @@ function installModule(module,version) {
             }
 
             var installDir = settings.userDir || process.env.NODE_RED_HOME || ".";
+
+            dnr.dnrModuleInstall(module, installDir, (err, stdout, stderr) => {
+                if (err) {
+                    log.warn(log._("server.install.install-failed-long",{name:module}));
+                    log.warn("------------------------------------------");
+                    log.warn(err);
+                    log.warn(stdout);
+                    log.warn(stderr);
+                    log.warn("------------------------------------------");
+                    reject(new Error(log._("server.install.install-failed")));
+                } else {
+                    log.info(log._("server.install.installed",{name:module}));
+                    resolve(require("./index").addModule(module).then(reportAddedModules));
+                }
+            });
+            return;
+
             var args = ['install','--save','--save-prefix="~"','--production',installName];
             log.trace(npmCommand + JSON.stringify(args));
             var child = child_process.spawn(npmCommand,args,{

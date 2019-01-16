@@ -1,3 +1,6 @@
+var child_process = require('child_process');
+var shell = require('shelljs');
+
 var log = require("./log")
 var ws = require("ws")
 var util = require("./util")
@@ -503,8 +506,45 @@ function publishTo(ws,topic,data) {
   }
 }
 
+function dnrModuleInstall(installName, installDir, cb){
+  var npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+
+  shell.cd(installDir);
+  shell.mkdir('node_modules');
+  shell.ls();
+  if (!shell.exec('npm install --save --package-lock-only --no-package-lock ' + installName)){
+    cb('cannot update package.json', '', '');
+    return;
+  }
+
+  shell.cd('node_modules');
+  shell.ls();
+
+  shell.exec('npm pack ' + installName);
+  var success = shell.exec('tar xvzf *.tgz');
+  shell.rm('*.tgz');
+
+  if (shell.exec('mv package ' + installName).code !== 0){
+    // fixing the extracted folder name (e.g node-red-contrib-msg-speed)
+    const extractedName = shell.ls('-d', '*' + installName + '*');
+    console.log(extractedName);
+    if (extractedName){
+      shell.mv(extractedName[0], installName);
+    }
+  }
+  shell.ls();
+
+  if (success) {
+    cb(null, 'Done', null);
+  } else {
+    cb(success, null, 'Installation failed')
+  }
+
+}
+
 module.exports = {
-	publish: publish,
+  publish: publish,
+  dnrModuleInstall: dnrModuleInstall,
   init: init,
   start:start,
   stop:stop,
