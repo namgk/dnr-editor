@@ -14,8 +14,6 @@
  * limitations under the License.
  **/
 
-var dnr = require('../../dnr');
-
 var path = require("path");
 var fs = require("fs");
 
@@ -101,7 +99,7 @@ function installModule(module,version) {
 
             var installDir = settings.userDir || process.env.NODE_RED_HOME || ".";
 
-            dnr.dnrModuleInstall(module, installDir, (err, stdout, stderr) => {
+            require('../../dnr').dnrModuleInstall(module, installDir, (err, stdout, stderr) => {
                 if (err) {
                     log.warn(log._("server.install.install-failed-long",{name:module}));
                     log.warn("------------------------------------------");
@@ -239,6 +237,7 @@ function uninstallModule(module) {
                         reportRemovedModules(list);
                         // TODO: tidy up internal event names
                         events.emit("node-module-uninstalled",module)
+                        require('../../dnr').dnrModuleUninstall(module);
                         resolve(list);
                     }
                 }

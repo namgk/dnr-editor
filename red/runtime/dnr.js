@@ -1,4 +1,3 @@
-var child_process = require('child_process');
 var shell = require('shelljs');
 
 var log = require("./log")
@@ -31,6 +30,8 @@ var TOPIC_REGISTER_ACK = dnrInterface.TOPIC_REGISTER_ACK
 var TOPIC_REGISTER_REQ = dnrInterface.TOPIC_REGISTER_REQ
 var TOPIC_DNR_SYN_RESS = dnrInterface.TOPIC_DNR_SYN_RESS
 var TOPIC_FLOW_DEPLOYED = dnrInterface.TOPIC_FLOW_DEPLOYED
+var TOPIC_MODULE_INSTALLED = dnrInterface.TOPIC_MODULE_INSTALLED
+var TOPIC_MODULE_DELETED = dnrInterface.TOPIC_MODULE_DELETED
 
 // hooked from flow deployment 
 function publish(config, diff, flows){
@@ -506,45 +507,57 @@ function publishTo(ws,topic,data) {
   }
 }
 
+// cb: (err, stdout, stderr) => {}
 function dnrModuleInstall(installName, installDir, cb){
-  var npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-
   shell.cd(installDir);
   shell.mkdir('node_modules');
-  shell.ls();
+
+  // adding node dependency to package.json
   if (!shell.exec('npm install --save --package-lock-only --no-package-lock ' + installName)){
-    cb('cannot update package.json', '', '');
+    cb('Installation failed', null, 'cannot update package.json');
     return;
   }
 
   shell.cd('node_modules');
-  shell.ls();
 
+  // download and extract node package (refrain from npm install)
   shell.exec('npm pack ' + installName);
+
+  // node module tarball will be extracted to a package folder, some exceptions apply
   var success = shell.exec('tar xvzf *.tgz');
   shell.rm('*.tgz');
 
+  // rename the extracted folder to node module name, if the tarball is not extracted to a 'package' folder, 
+  // rename it based on a pattern
   if (shell.exec('mv package ' + installName).code !== 0){
     // fixing the extracted folder name (e.g node-red-contrib-msg-speed)
     const extractedName = shell.ls('-d', '*' + installName + '*');
-    console.log(extractedName);
     if (extractedName){
       shell.mv(extractedName[0], installName);
     }
   }
-  shell.ls();
 
   if (success) {
-    cb(null, 'Done', null);
+    cb(null, 'Installation succeed', null);
+    // broadcast installation event to participating devices
+    broadcast(TOPIC_MODULE_INSTALLED, {
+      module: installName
+    })
   } else {
-    cb(success, null, 'Installation failed')
+    cb('Installation failed', null, success)
   }
+}
 
+function dnrModuleUninstall(installName){
+  broadcast(TOPIC_MODULE_DELETED, {
+    module: installName
+  })
 }
 
 module.exports = {
   publish: publish,
   dnrModuleInstall: dnrModuleInstall,
+  dnrModuleUninstall: dnrModuleUninstall,
   init: init,
   start:start,
   stop:stop,
