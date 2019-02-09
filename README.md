@@ -27,13 +27,19 @@ The idea of DNR:
 Requirements: several Raspberry Pi (participating Node-RED, just for fun, could be multiple instances of Node-RED in a single machine); a computer to run DNR Editor (the coordinator)
 
 ### Setup DNR Editor 
-Similar to Node-RED: git clone, npm install, grunt build, and start by "node red"
+UPDATE Feb 2019: a docker container has been prepared for running dnr-editor right out of the shelf:
 
-Or just: npm install -g dnr-editor, dnr-editor -s \<setting file\>
+    docker run -it -p 1818:1818 nhong/dnr-editor
+    
+Github installation: similar to Node-RED development: git clone, npm install, grunt build, and start by "node red"
+
+Npm installation: npm install -g dnr-editor, dnr-editor -s \<setting file\>
 
 DNR Editor will run by default at :1818 port.
 
 ### Connect Node RED to the cluster:
+    UPDATE: there's a tutorial video: https://www.youtube.com/watch?v=NVhIAz2s--Q&frags=pl%2Cwn
+
 1. For each Node RED instance, install *node-red-contrib-dnr* nodes: either using GUI->Menu->Manage Pallete->Install or go to ~/.node-red and do *npm install node-red-contrib-dnr*
 2. Getting the *Seed flow*: go to DNR Editor at http://localhost:1818, GUI->Menu->DNR->Export DNR Seed->Export to clipboard
 3. Import the *Seed flow* on each participating Node RED: GUI->Import->Clipboard->Paste(CMD/CTRL V)->Import
